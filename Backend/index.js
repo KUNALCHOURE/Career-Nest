@@ -1,9 +1,14 @@
 import express from "express";
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 import dotenv from "dotenv";
 import ApiError from "./utils/Apierror.js";
+import cookieParser from "cookie-parser";
 
 
+app.use(express.json({limit:"16kb"}));
+app.use(express.urlencoded({extended:true,limit:"16kb"})) 
+app.use(express.static("public"))
+app.use(cookieParser());
 
 const app=express();
 
@@ -21,6 +26,19 @@ const connectDB=async()=>{
 }
 
 connectDB();
+
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+    errors: err.errors || [],
+    data: null,
+  });
+});
+
 
 app.listen(3030,()=>{
     console.log("server is listening ")
