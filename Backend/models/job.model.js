@@ -105,15 +105,8 @@ const jobschema = new Schema({
     type: [String],
     default: [],
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+
+},{timestamps:true});
 
 const Job =mongoose.model('job',jobschema);
 export default Job;
