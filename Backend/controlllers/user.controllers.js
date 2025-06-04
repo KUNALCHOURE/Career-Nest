@@ -7,13 +7,13 @@ const generatetokens=async(userid)=>{
         throw new ApiError(401,"Error while generating tokens");
      }
 
-     const founduser=User.findById({userid});
+     const founduser=await User.findById(userid);
      if(!founduser){
       throw new ApiError(400,"User doesnot exist");
      }
 
-    const accesstoken=founduser.generateAcessToken();
-    const refreshtoken=founduser.generateRefreshToken();
+    const accesstoken= await founduser.generateAcessToken();
+    const refreshtoken=await founduser.generateRefreshToken();
 
     if(!accesstoken || !refreshtoken) {
       throw new ApiError(500,"Error while generating tokens");
@@ -36,7 +36,7 @@ const register=async(req,res)=>{
             throw new ApiError(400,"User already exists");
          }
 
-         const newuser =User.create({
+         const newuser = await User.create({
             username,
             email,
             password
@@ -46,7 +46,7 @@ const register=async(req,res)=>{
             throw new ApiError(500,"Failed to create user");
          }
 
-         const createduser =User .findById(newuser._id).select('-password');
+         const createduser =await User .findById(newuser._id).select('-password');
          if(!createduser){
             throw new ApiError(400,"User is not created ");
          }
@@ -70,7 +70,34 @@ const login = async (req, res) => {
          if(!exists){
             throw new ApiError(400,"User has not registered");
          }
+        
+         let ispasscorrect=await exists.ispasswordcorrect(password);
+         if(!ispasscorrect){
+            throw ApiError(400,"password is not correct");
 
+         }
+
+      const [accesstoken,refreshtoken]=generatetokens(exists._id);
+      exists.refreshtoken = refreshtoken;
+await exists.save();
+     const loggedinuser=await User.findById(exists._id).select("-password -refreshtoken");
+
+      const options={   
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/'  // Explicitly setting the path
+                  
+  }
+    return res
+    .status(200)
+    .cookie("accesstoken",accesstoken,options)
+    .cookie("refreshtoken",refreshtoken,options)
+    .json(new ApiResponse(200,
+      {
+      user:loggedinuser,accesstoken,
+      refreshtoken
+    },
+      "user logged in successfully "));
 
 
     } catch (error) {
@@ -79,5 +106,32 @@ const login = async (req, res) => {
 }
 
 
+const logoutuser = async (req, res) => {
+  const userId = req.user?._id;
 
-export {register,login};
+  if (!userId) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  await User.findByIdAndUpdate(
+    userId,
+    { $set: { refreshtoken: undefined } },
+    { new: true }
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict"
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged out successfully"));
+};
+
+export { logoutuser };
+
+export {register,login,logoutuser};
