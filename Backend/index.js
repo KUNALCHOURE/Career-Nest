@@ -3,14 +3,16 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import ApiError from "./utils/Apierror.js";
 import cookieParser from "cookie-parser";
+import userRoutes from './routes/user.routes.js'
 
 
+
+const app=express();
 app.use(express.json({limit:"16kb"}));
 app.use(express.urlencoded({extended:true,limit:"16kb"})) 
 app.use(express.static("public"))
 app.use(cookieParser());
 
-const app=express();
 
 dotenv.config();
 
@@ -26,6 +28,10 @@ const connectDB=async()=>{
 }
 
 connectDB();
+
+app.use("/api/v1/user",userRoutes);
+
+
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
