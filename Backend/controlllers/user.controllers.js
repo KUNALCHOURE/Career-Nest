@@ -78,7 +78,7 @@ const register = asynchandler(async (req, res) => {
 const login = asynchandler(async (req, res) => {
     // Allow login with either username or email
     const { identifier, password } = req.body; // Using 'identifier' to represent either username or email
-
+   console.log("login in");
     if (!identifier || !password) {
         throw new ApiError(400, "Identifier (username or email) and password are required");
     }
@@ -90,12 +90,14 @@ const login = asynchandler(async (req, res) => {
             { email: identifier }
         ]
     });
-    console.log(exists._id)
+    
+  
 
     if (!exists) {
         throw new ApiError(400, "User not found with provided identifier or has not registered");
     }
-
+    console.log(exists._id)
+    console.log("2nd ")
     const ispasscorrect = await exists.ispasswordcorrect(password);
     if (!ispasscorrect) {
         throw new ApiError(400, "Invalid credentials: password is not correct");
