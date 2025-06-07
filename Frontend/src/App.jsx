@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import Navbar from './components/navbar';
 import Home from './pages/Home.jsx';
 import { AuthProvider } from './context/authcontext.jsx'
+import Jobpage from './pages/Jobpage.jsx'
 function App() {
   return (
     <>
@@ -16,6 +17,7 @@ function App() {
         <Route path='/login' element={<Login />} />
         <Route path='/Register' element={<Register/>}></Route>
         <Route path='/home' element={<Home/>}></Route>
+        <Route path='/jobs' element={<Jobpage/>}></Route>
       </Routes>
       </AuthProvider>
     </>
