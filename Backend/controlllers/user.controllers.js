@@ -158,5 +158,19 @@ const logoutuser = asynchandler(async (req, res) => {
         .clearCookie("refreshtoken", options)
         .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
+const getcurrectuser=asynchandler(async(req,res)=>{
+    let userobject=req.user;
+        // select method dont work on js object 
+        // they only work on mongoose query
+      return res.status(200)
+      .json(
+        new ApiResponse(200,
+        { userobject}
+        ,"The user is succesfully found ")
+    
+      )
+    
+       
+    })
 
-export { register, login, logoutuser };
+export { register, login, logoutuser ,getcurrectuser};
