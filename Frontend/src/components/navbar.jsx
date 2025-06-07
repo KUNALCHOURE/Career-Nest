@@ -37,17 +37,17 @@ const navigate=useNavigate();
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
-            <a href="#home" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
+            <a href="/home" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
               Home
             </a>
-            <a href="#jobs" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
+            <a href="/jobs" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
               Browse Jobs
             </a>
-            <a href="#companies" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
+            <a href="/companies" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
               Companies
             </a>
            
-            <a href="#about" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
+            <a href="/about" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
               About
             </a>
           </div>
@@ -93,7 +93,7 @@ const navigate=useNavigate();
 
           <div className="pt-4 space-y-4 border-t border-gray-200">
             <a 
-              href="#home" 
+              href="/home" 
               className="block text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
               onClick={() => setIsMenuOpen(false)}
             >

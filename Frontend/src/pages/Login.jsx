@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import authService from '../../service/authservice';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/authcontext';
 
 const Login = () => {
-  const navigate = useNavigate();
+  const { login } = useAuth();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,10 +28,8 @@ const Login = () => {
     
     try {
       console.log('Login data:', formData);
-      const response = await authService.login(formData);
-      console.log("loggedin", response);
-      // If login successful, redirect to home page
-      navigate('/');
+      await login(formData);
+      // Navigation is handled in the auth context
     } catch (err) {
       console.error("Login error:", err);
       setError(err.message || 'Login failed. Please try again.');

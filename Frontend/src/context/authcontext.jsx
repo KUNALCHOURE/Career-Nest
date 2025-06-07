@@ -35,12 +35,13 @@ export const AuthProvider = ({ children }) => {
     const login = async (credentials) => {
         try {
             const response = await authService.login(credentials);
-            if (!response || !response.user) {
-                throw new Error("Invalid response from the server");
-            }
             console.log("Login Response:", response);
 
-            setUser(response.user);
+            if (!response || !response.data) {
+                throw new Error("Invalid response from the server");
+            }
+
+            setUser(response.data);
             toast.success('Welcome back!');
             navigate("/home");
         } catch (error) {
@@ -56,11 +57,11 @@ export const AuthProvider = ({ children }) => {
             const response = await authService.register(userData);
             console.log("Register Response:", response);
 
-            if (!response || !response.user) {
+            if (!response || !response.data) {
                 throw new Error("Invalid response from the server");
             }
 
-            setUser(response.user);
+            setUser(response.data);
             toast.success('Registration successful!');
             navigate("/home");
         } catch (error) {

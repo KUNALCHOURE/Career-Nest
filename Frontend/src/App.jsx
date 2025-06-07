@@ -4,10 +4,12 @@ import Login from './pages/Login'
 import { Route,Routes } from 'react-router-dom'
 import Register from './pages/Register'
 import Navbar from './components/navbar';
-import Home from './pages/Home.jsx'
+import Home from './pages/Home.jsx';
+import { AuthProvider } from './context/authcontext.jsx'
 function App() {
   return (
     <>
+    <AuthProvider>
        <Navbar/>
       <Routes>
         <Route path='/' element={<Landing />} />
@@ -15,6 +17,7 @@ function App() {
         <Route path='/Register' element={<Register/>}></Route>
         <Route path='/home' element={<Home/>}></Route>
       </Routes>
+      </AuthProvider>
     </>
   )
 }

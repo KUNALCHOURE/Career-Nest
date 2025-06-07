@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import authService from '../../service/authservice';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/authcontext';
 
 const Register = () => {
-  const navigate = useNavigate();
+  const { register } = useAuth();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -42,19 +42,15 @@ const Register = () => {
 
     setIsLoading(true);
     
-    try{
-    const register=await authService.register(formData);
-    console.log(register);
-    console.log("registered");
-    setIsLoading(false);
-    navigate("/home");
+    try {
+      await register(formData);
+      // Navigation is handled in the auth context
+    } catch (err) {
+      console.error("Registration error:", err);
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    catch(e){
-      console.log(e);
-      setError(e.message);
-      
-    }
-   
   };
 
   return (
