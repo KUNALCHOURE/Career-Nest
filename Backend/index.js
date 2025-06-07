@@ -5,7 +5,7 @@ import ApiError from "./utils/Apierror.js";
 import cookieParser from "cookie-parser";
 import userRoutes from './routes/user.routes.js'
 import cors from 'cors'
-
+import jobRoutes from './routes/jobs.route.js'
 
 const app=express();
 app.use(express.json({limit:"16kb"}));
@@ -33,7 +33,7 @@ const connectDB=async()=>{
 connectDB();
 
 app.use("/api/v1/user",userRoutes);
-
+app.use("/api/v1/jobs",jobRoutes);
 
 
 app.use((err, req, res, next) => {
