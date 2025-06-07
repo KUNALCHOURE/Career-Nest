@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/authcontext';
+
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-
-const navigate=useNavigate();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   // Handle scroll effect
   useEffect(() => {
@@ -17,6 +19,11 @@ const navigate=useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   return (
@@ -46,33 +53,46 @@ const navigate=useNavigate();
             <a href="/companies" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
               Companies
             </a>
-           
             <a href="/about" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
               About
             </a>
           </div>
 
           {/* Desktop Auth Buttons */}
-          <div className="hidden lg:flex items-center space-x-4" >
-            <button className="text-gray-700 hover:text-indigo-600 font-medium px-4 py-2 rounded-lg transition-colors duration-200"
-             onClick={() =>{ 
-                setIsMenuOpen(false);
-               navigate('/login')
-             }
-             }
-             >
-              Login
-            </button>
-            <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
-           onClick={() =>{ 
-            setIsMenuOpen(false);
-           navigate('/register')
-         }
-         }
-
-            >
-              Register
-            </button>
+          <div className="hidden lg:flex items-center space-x-4">
+            {!user ? (
+              <>
+                <button 
+                  className="text-gray-700 hover:text-indigo-600 font-medium px-4 py-2 rounded-lg transition-colors duration-200"
+                  onClick={() => navigate('/login')}
+                >
+                  Login
+                </button>
+                <button 
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+                  onClick={() => navigate('/register')}
+                >
+                  Register
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <span className="text-indigo-600 font-medium">
+                      {user.username ? user.username[0].toUpperCase() : 'U'}
+                    </span>
+                  </div>
+                  <span className="text-gray-700 font-medium">{user.username || 'User'}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-indigo-600 font-medium px-4 py-2 rounded-lg transition-colors duration-200"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -85,12 +105,9 @@ const navigate=useNavigate();
         </div>
 
         {/* Mobile Menu */}
-        <div className={`lg:hidden transition-all duration-500
-        ${isMenuOpen? 'max-h-90 opacity-100 pb-6':
-            'max-h-0 opacity-0 overflow-hidden'
-        }
+        <div className={`lg:hidden transition-all duration-500 ${
+          isMenuOpen ? 'max-h-90 opacity-100 pb-6' : 'max-h-0 opacity-0 overflow-hidden'
         }`}>
-
           <div className="pt-4 space-y-4 border-t border-gray-200">
             <a 
               href="/home" 
@@ -100,22 +117,21 @@ const navigate=useNavigate();
               Home
             </a>
             <a 
-              href="#jobs" 
+              href="/jobs" 
               className="block text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
               onClick={() => setIsMenuOpen(false)}
             >
               Browse Jobs
             </a>
-           
             <a 
-              href="#resources" 
+              href="/companies" 
               className="block text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
               onClick={() => setIsMenuOpen(false)}
             >
-              Resources
+              Companies
             </a>
             <a 
-              href="#about" 
+              href="/about" 
               className="block text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
               onClick={() => setIsMenuOpen(false)}
             >
@@ -123,26 +139,48 @@ const navigate=useNavigate();
             </a>
             
             {/* Mobile Auth Buttons */}
-            <div className="pt-4 space-y-3 border-t border-gray-200" >
-              <button className="w-full text-left text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-               onClick={() =>{ 
-                setIsMenuOpen(false);
-               navigate('/login')
-             }
-             }
->
-                Login
-              </button>
-              <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
-              onClick={() =>{ 
-                 setIsMenuOpen(false);
-                navigate('/register')
-              }
-              }
->
-                Register
-              </button>
-            </div>
+            {!user ? (
+              <div className="pt-4 space-y-3 border-t border-gray-200">
+                <button 
+                  className="w-full text-left text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    navigate('/login');
+                  }}
+                >
+                  Login
+                </button>
+                <button 
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    navigate('/register');
+                  }}
+                >
+                  Register
+                </button>
+              </div>
+            ) : (
+              <div className="pt-4 space-y-3 border-t border-gray-200">
+                <div className="flex items-center space-x-2 px-4 py-2">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <span className="text-indigo-600 font-medium">
+                      {user.username ? user.username[0].toUpperCase() : 'U'}
+                    </span>
+                  </div>
+                  <span className="text-gray-700 font-medium">{user.username || 'User'}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full text-left text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
