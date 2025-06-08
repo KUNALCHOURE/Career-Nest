@@ -19,9 +19,7 @@ const getalljob = asynchandler(async (req, res) => {
     const query = {};
 
     if (q) {
-      // Using $text for full-text search if you have a text index
-      // Otherwise, use $or with $regex for title and description
-      // Assuming you have a text index on title and description as per job.model.js
+      
       query.$or = [
         { title: { $regex: q, $options: 'i' } },
         { description: { $regex: q, $options: 'i' } },
@@ -77,14 +75,19 @@ const getalljob = asynchandler(async (req, res) => {
     );
 
   } catch (error) {
-    console.error('Error fetching jobs:', error);
+    console.error('Error fetching jobs from MongoDB:', error);
     throw new ApiError(500, "A problem occurred while fetching jobs.", error.message);
   }
 });
 
 const fetchAndStoreJobs = asynchandler(async (req, res) => {
+  console.log('Attempting to fetch and store jobs...');
   try {
-    // Call apijobs.dev API to fetch new jobs
+    if (!process.env.JOB_INFO_API) {
+      console.error('JOB_INFO_API environment variable is not set.');
+      throw new ApiError(400, 'API Key for external job service is missing.');
+    }
+
     const apiResponse = await fetch('https://api.apijobs.dev/v1/job/search', {
       method: 'POST',
       headers: {
@@ -93,76 +96,103 @@ const fetchAndStoreJobs = asynchandler(async (req, res) => {
       },
       body: JSON.stringify({
         q: "Software Developer", // Example query, you might want to make this dynamic or fetch a wider range
-        limit: 50 // Fetch a reasonable number of jobs from the external API
       })
     });
 
     if (!apiResponse.ok) {
-      const errorData = await apiResponse.json();
-      throw new ApiError(apiResponse.status, `Failed to fetch jobs from external API: ${errorData.message || apiResponse.statusText}`);
+      const errorText = await apiResponse.text(); // Get raw error text
+      console.error(`External API responded with status ${apiResponse.status}: ${errorText}`);
+      throw new ApiError(apiResponse.status, `Failed to fetch jobs from external API. Status: ${apiResponse.status}, Message: ${errorText.substring(0, 100)}...`);
     }
+   // console.log(apiResponse);
 
     const apiJobsData = await apiResponse.json();
-    const fetchedJobs = apiJobsData.jobs; // Assuming the external API returns jobs in a 'jobs' array
-
+    // await fs.writeFile('api_response_debug.json', JSON.stringify(apiJobsData, null, 2)); // Remove fs.writeFile
+    // console.log('Current Working Directory:', process.cwd()); // Remove cwd log
+    // console.log('Full API response written to Backend/api_response_debug.json');
+    console.log(`Successfully fetched ${apiJobsData.hits?.length || 0} jobs from external API.`);
+    //console.log(apiJobsData.jobs);
+    if (!apiJobsData.hits || !Array.isArray(apiJobsData.hits)) {
+      // console.error('Debug: apiJobsData.jobs is:', apiJobsData.jobs);
+      // console.error('Debug: Array.isArray(apiJobsData.jobs) is:', Array.isArray(apiJobsData.jobs));
+      console.error('Invalid API response format:', JSON.stringify(apiJobsData, null, 2));
+      throw new ApiError(500, 'Invalid data format from external API.');
+    }
+    
+    const fetchedJobs = apiJobsData.hits;
     let newJobsCount = 0;
     let updatedJobsCount = 0;
+    let errorCount = 0;
 
     for (const jobData of fetchedJobs) {
-      // Map external API data to your Mongoose Job model schema
-      const mappedJob = {
-        apijobsId: jobData.id, // Use a unique ID from the external API
-        title: jobData.title,
-        description: jobData.description,
-        url: jobData.url,
-        publishedAt: jobData.publishedAt, // Ensure this is a valid date string or Date object
-        hiringOrganizationName: jobData.hiringOrganization?.name,
-        website: jobData.hiringOrganization?.website,
-        companyUrl: jobData.hiringOrganization?.url,
-        companyLogoUrl: jobData.hiringOrganization?.logoUrl,
-        country: jobData.country,
-        region: jobData.region,
-        city: jobData.city,
-        remote: jobData.remote || false,
-        employmentType: jobData.employmentType,
-        salaryMin: jobData.salary?.min,
-        salaryMax: jobData.salary?.max,
-        salaryCurrency: jobData.salary?.currency,
-        salaryPeriod: jobData.salary?.period,
-        // Assuming skills come as an array of strings, or you might need to parse them
-        skills: jobData.skills || [], 
-        industry: jobData.industry,
-        jobTags: jobData.jobTags || []
-      };
-
-      // Find and update, or insert if not found (upsert)
-      const result = await Job.findOneAndUpdate(
-        { apijobsId: mappedJob.apijobsId }, // Find by apijobsId to avoid duplicates
-        { $set: mappedJob }, // Update with new data
-        { upsert: true, new: true, setDefaultsOnInsert: true } // Create if not exists, return new doc
-      );
-      
-      if (result && result._id) {
+      try {
+        console.log('Processing job:', jobData.id);
         
-        if (result.createdAt.getTime() === result.updatedAt.getTime()) { 
+        // Map external API data (snake_case) to Mongoose Job model schema (camelCase)
+        const mappedJob = {
+          apijobsId: jobData.id,
+          title: jobData.title,
+          description: jobData.description,
+          url: jobData.url,
+          publishedAt: jobData.published_at,
+          hiringOrganizationName: jobData.hiring_organization_name,
+          hiringOrganizationLogo: jobData.hiring_organization_logo,
+          website: jobData.website,
+          websiteId: jobData.website_id,
+          country: jobData.country,
+          region: jobData.region,
+          city: jobData.city,
+          createdAt: jobData.created_at
+        };
+
+        console.log('Mapped job data:', JSON.stringify(mappedJob, null, 2));
+
+        // Find and update, or insert if not found (upsert)
+        const result = await Job.findOneAndUpdate(
+          { apijobsId: mappedJob.apijobsId },
+          { $set: mappedJob },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        
+        if (result && result._id) {
+          if (result.createdAt.getTime() === result.updatedAt.getTime()) {
             newJobsCount++;
-        } else {
+            console.log(`Created new job with ID: ${result._id}`);
+          } else {
             updatedJobsCount++;
+            console.log(`Updated existing job with ID: ${result._id}`);
+          }
         }
+      } catch (innerError) {
+        errorCount++;
+        console.error(`Error processing job ${jobData.id}:`, innerError);
+        console.error('Job data that caused error:', JSON.stringify(jobData, null, 2));
       }
     }
+
+    console.log(`Job processing complete. New: ${newJobsCount}, Updated: ${updatedJobsCount}, Errors: ${errorCount}`);
 
     res.status(200).json(
       new ApiResponse(
         200,
-        { newJobs: newJobsCount, updatedJobs: updatedJobsCount, totalFetched: fetchedJobs.length },
-        `Successfully fetched and stored ${newJobsCount} new jobs and updated ${updatedJobsCount} jobs.`
+        { 
+          newJobs: newJobsCount, 
+          updatedJobs: updatedJobsCount, 
+          errorCount,
+          totalFetched: fetchedJobs.length 
+        },
+        `Successfully processed jobs. New: ${newJobsCount}, Updated: ${updatedJobsCount}, Errors: ${errorCount}`
       )
     );
 
   } catch (error) {
-    console.error('Error fetching and storing jobs:', error);
-    throw new ApiError(500, "A problem occurred while fetching and storing jobs from external API.", error.message);
+    console.error('Fatal error in fetchAndStoreJobs:', error);
+    console.error('Error stack:', error.stack);
+    throw new ApiError(
+      error.statusCode || 500, 
+      error.message || "A problem occurred while fetching and storing jobs from external API.",
+      error
+    );
   }
 });
 
