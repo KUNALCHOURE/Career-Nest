@@ -3,7 +3,6 @@ import api from '../service/api.js'
 export default function Jobpage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
-  const [jobType, setJobType] = useState('all');
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,7 +24,6 @@ export default function Jobpage() {
 
       if (searchQuery) params.append('q', searchQuery);
       if (location) params.append('city', location);
-      if (jobType && jobType !== 'all') params.append('employmentType', jobType);
       if (skills) params.append('skills', skills);
       console.log("fetching rquest")
       const response = await api.get('/jobs/jobs');
@@ -51,7 +49,7 @@ export default function Jobpage() {
 
   useEffect(() => {
     fetchJobs();
-  }, [currentPage, searchQuery, location, jobType, skills, salaryRange, experienceLevel]); // Re-fetch when these change
+  }, [currentPage, searchQuery, location, skills, salaryRange, experienceLevel]); // Re-fetch when these change
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -63,11 +61,11 @@ export default function Jobpage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post('/jobs/jobs/fetch-and-store')
-      if (!response.ok) {
+      const response = await api.post('/jobs/jobs/fetch-and-store');
+      if (response.status !== 200) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
+      const data = response.data;
       alert(data.message); // Show a success message
       fetchJobs(); // Re-fetch jobs from your DB after storing
     } catch (e) {
@@ -86,10 +84,6 @@ export default function Jobpage() {
     } else if (name === 'skills') {
       setSkills(value);
     }
-  };
-
-  const handleSelectChange = (e) => {
-    setJobType(e.target.value);
   };
 
   const handlePageChange = (newPage) => {
@@ -160,17 +154,6 @@ export default function Jobpage() {
                   className="w-full pl-10 pr-4 py-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
-              <select
-                value={jobType}
-                onChange={handleSelectChange}
-                className="px-4 py-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              >
-                <option value="all">All Types</option>
-                <option value="full-time">Full Time</option>
-                <option value="part-time">Part Time</option>
-                <option value="contract">Contract</option>
-                <option value="remote">Remote</option>
-              </select>
             </div>
             <div className="mt-4 flex justify-center space-x-4">
               <button
@@ -308,13 +291,22 @@ export default function Jobpage() {
                   <h2 className="text-xl font-semibold text-gray-900 hover:text-indigo-600 cursor-pointer transition-colors">
                     {job.title}
                   </h2>
-                  <span className="bg-indigo-100 text-indigo-800 text-sm font-medium px-3 py-1 rounded-full">
+                  {/* <span className="bg-indigo-100 text-indigo-800 text-sm font-medium px-3 py-1 rounded-full">
                     {job.employmentType}
-                  </span>
+                  </span> */}
                 </div>
                 
                 <div className="mb-4">
-                  <h3 className="text-lg text-gray-700 font-medium">{job.hiringOrganizationName}</h3>
+                  <div className="flex items-center space-x-2 mb-2">
+                    {job.hiringOrganizationLogo && (
+                      <img
+                        src={job.hiringOrganizationLogo}
+                        alt={job.hiringOrganizationName}
+                        className="h-8 w-8 object-contain rounded-full"
+                      />
+                    )}
+                    <h3 className="text-lg text-gray-700 font-medium">{job.hiringOrganizationName}</h3>
+                  </div>
                   <div className="flex items-center text-gray-500 mt-1">
                     <svg
                       className="h-4 w-4 mr-1"
@@ -336,12 +328,12 @@ export default function Jobpage() {
                         d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                       />
                     </svg>
-                    <span>{job.city}{job.region ? `, ${job.region}` : ''}{job.country ? `, ${job.country}` : ''}{job.remote ? ' (Remote)' : ''}</span>
+                    <span>{job.city}{job.region ? `, ${job.region}` : ''}{job.country ? `, ${job.country}` : ''}</span>
                   </div>
                 </div>
                 
                 <div className="space-y-2 mb-4">
-                  <p className="text-green-600 font-semibold">{job.salaryMin && job.salaryMax ? `$${job.salaryMin} - $${job.salaryMax} ${job.salaryCurrency ? job.salaryCurrency : ''} ${job.salaryPeriod ? job.salaryPeriod : ''}` : 'Salary not specified'}</p>
+                  {/* <p className="text-green-600 font-semibold">{job.salaryMin && job.salaryMax ? `$${job.salaryMin} - $${job.salaryMax} ${job.salaryCurrency ? job.salaryCurrency : ''} ${job.salaryPeriod ? job.salaryPeriod : ''}` : 'Salary not specified'}</p> */}
                   <p className="text-gray-600 leading-relaxed line-clamp-3">{job.description}</p>
                   <p className="text-sm text-gray-500">Posted {new Date(job.publishedAt).toLocaleDateString()}</p>
                 </div>
