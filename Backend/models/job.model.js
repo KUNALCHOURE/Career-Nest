@@ -27,6 +27,11 @@ const jobschema = new Schema({
     type: String,
     trim: true,
   },
+  hiringOrganizationLogo: {
+    type: String,
+    trim: true,
+    sparse: true, // Allow null or missing value without creating duplicate unique entries
+  },
   website: {
     type: String,
     trim: true,
