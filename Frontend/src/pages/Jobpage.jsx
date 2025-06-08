@@ -1,57 +1,80 @@
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
+import api from '../service/api.js'
 export default function Jobpage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
   const [jobType, setJobType] = useState('all');
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [skills, setSkills] = useState(''); // New state for skills
+  const [salaryRange, setSalaryRange] = useState(''); // New state for salary range filter
+  const [experienceLevel, setExperienceLevel] = useState(''); // New state for experience level
 
-  // Mock job data - replace with actual API call later
-  const jobs = [
-    {
-      id: 1,
-      title: 'Senior Software Engineer',
-      company: 'Tech Corp',
-      location: 'New York, NY',
-      type: 'Full-time',
-      salary: '$120k - $150k',
-      description: 'Looking for an experienced software engineer to join our dynamic team. You will work on cutting-edge projects and collaborate with talented professionals.',
-      posted: '2 days ago'
-    },
-    {
-      id: 2,
-      title: 'Frontend Developer',
-      company: 'Web Solutions',
-      location: 'Remote',
-      type: 'Contract',
-      salary: '$90k - $110k',
-      description: 'Join our team as a frontend developer working with React and modern web technologies. Perfect opportunity for remote work.',
-      posted: '1 week ago'
-    },
-    {
-      id: 3,
-      title: 'Product Manager',
-      company: 'Innovation Labs',
-      location: 'San Francisco, CA',
-      type: 'Full-time',
-      salary: '$130k - $160k',
-      description: 'Lead product strategy and work with cross-functional teams to deliver exceptional user experiences.',
-      posted: '3 days ago'
-    },
-    {
-      id: 4,
-      title: 'UX Designer',
-      company: 'Design Studio',
-      location: 'Los Angeles, CA',
-      type: 'Part-time',
-      salary: '$60k - $80k',
-      description: 'Create beautiful and intuitive user experiences for web and mobile applications.',
-      posted: '5 days ago'
+  const fetchJobs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: 10, // You can make this dynamic if needed
+      });
+
+      if (searchQuery) params.append('q', searchQuery);
+      if (location) params.append('city', location);
+      if (jobType && jobType !== 'all') params.append('employmentType', jobType);
+      if (skills) params.append('skills', skills);
+      console.log("fetching rquest")
+      const response = await api.get('/jobs/jobs');
+      console.log(response);
+      if (response.status!=200) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data =  response.data
+      setJobs(data.data.jobs);
+      setTotalJobs(data.data.totalJobs);
+      setTotalPages(data.data.totalPages);
+      setCurrentPage(data.data.currentPage);
+    } catch (e) {
+      setError('Failed to fetch jobs: ' + e.message);
+      setJobs([]);
+      setTotalJobs(0);
+      setTotalPages(1);
+      setCurrentPage(1);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, [currentPage, searchQuery, location, jobType, skills, salaryRange, experienceLevel]); // Re-fetch when these change
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log('Searching for:', { searchQuery, location, jobType });
+    setCurrentPage(1); // Reset to first page on new search
+    fetchJobs();
+  };
+
+  const handleRefreshJobs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.post('/jobs/jobs/fetch-and-store')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      alert(data.message); // Show a success message
+      fetchJobs(); // Re-fetch jobs from your DB after storing
+    } catch (e) {
+      setError('Failed to refresh jobs from external API: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -60,11 +83,17 @@ export default function Jobpage() {
       setSearchQuery(value);
     } else if (name === 'location') {
       setLocation(value);
+    } else if (name === 'skills') {
+      setSkills(value);
     }
   };
 
   const handleSelectChange = (e) => {
     setJobType(e.target.value);
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
   };
 
   return (
@@ -143,7 +172,7 @@ export default function Jobpage() {
                 <option value="remote">Remote</option>
               </select>
             </div>
-            <div className="mt-4 flex justify-center">
+            <div className="mt-4 flex justify-center space-x-4">
               <button
                 onClick={handleSearch}
                 className="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2"
@@ -164,15 +193,38 @@ export default function Jobpage() {
                 </svg>
                 <span>Search Jobs</span>
               </button>
+              <button
+                onClick={handleRefreshJobs}
+                className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2"
+                disabled={loading} // Disable button while loading
+              >
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356-2A8.001 8.001 0 004 12c0 2.973 1.157 5.662 3.003 7.727m0 0l-1.427-1.427m1.427 1.427L8.98 20.98M20 20v-5h-.581m-15.357 2A8.001 8.001 0 0120 12c0-2.973-1.157-5.662-3.003-7.727m0 0l1.427 1.427L15.02 3.02"
+                  />
+                </svg>
+                <span>{loading ? 'Refreshing...' : 'Refresh Jobs'}</span>
+              </button>
             </div>
           </div>
         </div>
 
         {/* Results Summary */}
-        <div className="mb-6">
+        <div className="mb-6 flex justify-between items-center">
           <p className="text-gray-600">
-            Showing <span className="font-semibold text-gray-900">{jobs.length}</span> jobs
+            Showing <span className="font-semibold text-gray-900">{totalJobs}</span> jobs
           </p>
+          {console.log(error)}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
         </div>
 
         {/* Main Content */}
@@ -242,9 +294,14 @@ export default function Jobpage() {
 
           {/* Job Listings */}
           <div className="lg:col-span-3 space-y-6">
-            {jobs.map((job) => (
+            {loading && <p className="text-center text-indigo-600">Loading jobs...</p>}
+            {error && <p className="text-center text-red-500">Error: {error}</p>}
+            {!loading && jobs.length === 0 && !error && (
+              <p className="text-center text-gray-600">No jobs found matching your criteria.</p>
+            )}
+            {!loading && jobs.length > 0 && jobs.map((job) => (
               <div
-                key={job.id}
+                key={job.id} // Use job._id from MongoDB if available, or apijobsId
                 className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow duration-200 border border-gray-100"
               >
                 <div className="flex justify-between items-start mb-4">
@@ -252,12 +309,12 @@ export default function Jobpage() {
                     {job.title}
                   </h2>
                   <span className="bg-indigo-100 text-indigo-800 text-sm font-medium px-3 py-1 rounded-full">
-                    {job.type}
+                    {job.employmentType}
                   </span>
                 </div>
                 
                 <div className="mb-4">
-                  <h3 className="text-lg text-gray-700 font-medium">{job.company}</h3>
+                  <h3 className="text-lg text-gray-700 font-medium">{job.hiringOrganizationName}</h3>
                   <div className="flex items-center text-gray-500 mt-1">
                     <svg
                       className="h-4 w-4 mr-1"
@@ -279,20 +336,20 @@ export default function Jobpage() {
                         d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                       />
                     </svg>
-                    <span>{job.location}</span>
+                    <span>{job.city}{job.region ? `, ${job.region}` : ''}{job.country ? `, ${job.country}` : ''}{job.remote ? ' (Remote)' : ''}</span>
                   </div>
                 </div>
                 
                 <div className="space-y-2 mb-4">
-                  <p className="text-green-600 font-semibold">{job.salary}</p>
-                  <p className="text-gray-600 leading-relaxed">{job.description}</p>
-                  <p className="text-sm text-gray-500">Posted {job.posted}</p>
+                  <p className="text-green-600 font-semibold">{job.salaryMin && job.salaryMax ? `$${job.salaryMin} - $${job.salaryMax} ${job.salaryCurrency ? job.salaryCurrency : ''} ${job.salaryPeriod ? job.salaryPeriod : ''}` : 'Salary not specified'}</p>
+                  <p className="text-gray-600 leading-relaxed line-clamp-3">{job.description}</p>
+                  <p className="text-sm text-gray-500">Posted {new Date(job.publishedAt).toLocaleDateString()}</p>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200">
+                  <a href={job.url} target="_blank" rel="noopener noreferrer" className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200">
                     Apply Now
-                  </button>
+                  </a>
                   <button className="text-gray-400 hover:text-indigo-600 transition-colors">
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -303,6 +360,35 @@ export default function Jobpage() {
             ))}
           </div>
         </div>
+
+        {/* Pagination */}
+        {!loading && totalPages > 1 && (
+          <div className="flex justify-center items-center space-x-2 mt-8">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            {[...Array(totalPages)].map((_, index) => (
+              <button
+                key={index + 1}
+                onClick={() => handlePageChange(index + 1)}
+                className={`px-4 py-2 rounded-lg ${currentPage === index + 1 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              >
+                {index + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
