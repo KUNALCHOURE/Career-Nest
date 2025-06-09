@@ -125,110 +125,108 @@ export default function Jobpage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-12">
         {/* Search Section */}
-        <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-2xl p-8 mb-8">
+        <div className="bg-[#4f3ff0] rounded-2xl p-8 mb-8 flex flex-col items-center">
           <h1 className="text-4xl font-bold text-white text-center mb-8">
             Find Your Dream Job
           </h1>
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="col-span-2 relative">
-                <svg
-                  className="absolute left-3 top-3.5 h-5 w-5 text-gray-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                <input
-                  type="text"
-                  name="searchQuery"
-                  placeholder="Job title, keywords, or company"
-                  value={searchQuery}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
-              </div>
-              <div className="relative">
-                <svg
-                  className="absolute left-3 top-3.5 h-5 w-5 text-gray-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                <input
-                  type="text"
-                  name="location"
-                  placeholder="Location"
-                  value={location}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
-              </div>
-            </div>
-            <div className="mt-4 flex justify-center space-x-4">
-              <button
-                onClick={handleSearch}
-                className="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2"
+          <div className="w-full max-w-4xl flex flex-col md:flex-row items-center gap-4 mb-6">
+            <div className="relative flex-1 w-full">
+              <svg
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <svg
-                  className="h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                <span>Search Jobs</span>
-              </button>
-              <button
-                onClick={handleRefreshJobs}
-                className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2"
-                disabled={loading} // Disable button while loading
-              >
-                <svg
-                  className="h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356-2A8.001 8.001 0 004 12c0 2.973 1.157 5.662 3.003 7.727m0 0l-1.427-1.427m1.427 1.427L8.98 20.98M20 20v-5h-.581m-15.357 2A8.001 8.001 0 0120 12c0-2.973-1.157-5.662-3.003-7.727m0 0l1.427 1.427L15.02 3.02"
-                  />
-                </svg>
-                <span>{loading ? 'Refreshing...' : 'Refresh Jobs'}</span>
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <input
+                type="text"
+                name="searchQuery"
+                placeholder="Job title, keywords, or company"
+                value={searchQuery}
+                onChange={handleInputChange}
+                className="w-full pl-10 pr-4 py-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white text-gray-800"
+              />
             </div>
+            <div className="relative flex-1 w-full">
+              <svg
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <input
+                type="text"
+                name="location"
+                placeholder="Location"
+                value={location}
+                onChange={handleInputChange}
+                className="w-full pl-10 pr-4 py-3 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white text-gray-800"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row gap-4 justify-center w-full max-w-3xl">
+            <button
+              onClick={handleSearch}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-200 flex items-center justify-center"
+            >
+              <svg
+                className="h-5 w-5 mr-2"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              Search Jobs
+            </button>
+            <button
+              onClick={handleRefreshJobs}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-200 flex items-center justify-center"
+              disabled={loading}
+            >
+              <svg
+                className="h-5 w-5 mr-2"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356-2A8.001 8.001 0 004 12c0 2.973 1.157 5.662 3.003 7.727m0 0l-1.427-1.427m1.427 1.427L8.98 20.98M20 20v-5h-.581m-15.357 2A8.001 8.001 0 0120 12c0-2.973-1.157-5.662-3.003-7.727m0 0l1.427 1.427L15.02 3.02"
+                />
+              </svg>
+              {loading ? 'Refreshing...' : 'Refresh Jobs'}
+            </button>
           </div>
         </div>
 
