@@ -13,6 +13,10 @@ export default function Jobpage() {
   const [skills, setSkills] = useState(''); // New state for skills
   const [salaryRange, setSalaryRange] = useState(''); // New state for salary range filter
   const [experienceLevel, setExperienceLevel] = useState(''); // New state for experience level
+  const [jobType, setJobType] = useState(''); // New state for job type filter
+  const [companySize, setCompanySize] = useState(''); // New state for company size filter
+  const [jobRole, setJobRole] = useState(''); // New state for job role filter
+  const [country, setCountry] = useState(''); // New state for country filter
 
 
   const [searchParams,setSearchParams]=useSearchParams();
@@ -20,22 +24,16 @@ export default function Jobpage() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        page: currentPage,
-        limit: 10, // You can make this dynamic if needed
-      });
-
-      if (searchQuery) params.append('q', searchQuery);
-      if (location) params.append('city', location);
-      if (skills) params.append('skills', skills);
-      console.log("fetching rquest")
+      console.log("fetching request")
       const response = await api.get('/jobs/jobs', {
         params: {
           page: currentPage,
           limit: 10,
           q: searchQuery || undefined,
           city: location || undefined,
+          country: country || undefined,
           skills: skills || undefined,
+          role: jobRole || undefined,
         }
       });
       
@@ -43,7 +41,7 @@ export default function Jobpage() {
       if (response.status!=200) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data =response.data
+      const data = response.data
       console.log(data);
       setJobs(data.data.jobs);
       setTotalJobs(data.data.totalJobs);
@@ -62,8 +60,37 @@ export default function Jobpage() {
 
   useEffect(() => {
     fetchJobs();
-  },[currentPage])
-  // }, [currentPage, searchQuery, location, skills, salaryRange, experienceLevel]); // Re-fetch when these change
+  }, [currentPage, searchQuery, location, country, skills, jobRole]); // Re-fetch when filters change
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    switch (name) {
+      case 'searchQuery':
+        setSearchQuery(value);
+        break;
+      case 'location':
+        setLocation(value);
+        break;
+      case 'country':
+        setCountry(value);
+        break;
+      case 'skills':
+        setSkills(value);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    switch (filterType) {
+      case 'role':
+        setJobRole(value);
+        break;
+      default:
+        break;
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -86,17 +113,6 @@ export default function Jobpage() {
       setError('Failed to refresh jobs from external API: ' + e.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'searchQuery') {
-      setSearchQuery(value);
-    } else if (name === 'location') {
-      setLocation(value);
-    } else if (name === 'skills') {
-      setSkills(value);
     }
   };
 
@@ -233,58 +249,77 @@ export default function Jobpage() {
               <h3 className="text-xl font-semibold text-gray-900 mb-6">Filters</h3>
               
               <div className="space-y-6">
+                {/* Job Role Filter */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Experience Level</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">Job Role</h4>
                   <div className="space-y-2">
-                    <label className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
-                      <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" />
-                      <span className="ml-2">Entry Level</span>
-                    </label>
-                    <label className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
-                      <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" />
-                      <span className="ml-2">Mid Level</span>
-                    </label>
-                    <label className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
-                      <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" />
-                      <span className="ml-2">Senior Level</span>
-                    </label>
+                    {[
+                      'Software Development',
+                      'Design',
+                      'Marketing',
+                      'Sales',
+                      'Data Science',
+                      'Product Management',
+                      'Customer Support',
+                      'Operations'
+                    ].map((role) => (
+                      <label key={role} className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={jobRole === role}
+                          onChange={() => handleFilterChange('role', jobRole === role ? '' : role)}
+                          className="rounded text-indigo-600 focus:ring-indigo-500"
+                          disabled={loading}
+                        />
+                        <span className="ml-2">{role}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
 
+                {/* Location Filter */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Salary Range</h4>
-                  <div className="space-y-2">
-                    <label className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
-                      <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" />
-                      <span className="ml-2">$0 - $50k</span>
-                    </label>
-                    <label className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
-                      <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" />
-                      <span className="ml-2">$50k - $100k</span>
-                    </label>
-                    <label className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
-                      <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" />
-                      <span className="ml-2">$100k+</span>
-                    </label>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">Location</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">City</label>
+                      <input
+                        type="text"
+                        name="location"
+                        placeholder="Enter city"
+                        value={location}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        disabled={loading}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Country</label>
+                      <input
+                        type="text"
+                        name="country"
+                        placeholder="Enter country"
+                        value={country}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        disabled={loading}
+                      />
+                    </div>
                   </div>
                 </div>
 
+                {/* Skills Filter */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Company Size</h4>
-                  <div className="space-y-2">
-                    <label className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
-                      <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" />
-                      <span className="ml-2">Startup (1-50)</span>
-                    </label>
-                    <label className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
-                      <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" />
-                      <span className="ml-2">Medium (51-500)</span>
-                    </label>
-                    <label className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer">
-                      <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" />
-                      <span className="ml-2">Large (500+)</span>
-                    </label>
-                  </div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">Skills</h4>
+                  <input
+                    type="text"
+                    name="skills"
+                    placeholder="Enter skills (e.g., React, Node.js)"
+                    value={skills}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    disabled={loading}
+                  />
                 </div>
               </div>
             </div>
