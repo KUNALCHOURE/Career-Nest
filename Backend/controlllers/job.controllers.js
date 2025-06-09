@@ -4,81 +4,91 @@ import ApiResponse from "../utils/apiresponse.js";
 import asynchandler from "../utils/asynchandler.js";
 
 
-const getalljob = asynchandler(async (req, res) => {
+const getalljob = async (req, res) => {
   try {
-    const { q, city, region, country, employmentType, hiringOrganizationName, skills, sortBy } = req.query;
-    
-    // Pagination parameters
     const page = parseInt(req.query.page) || 1;
-    const defaultLimit = 10; // Choose a reasonable default
-    const maxAllowedLimit = 100; // Maximum allowed limit
-    const limit = Math.min(parseInt(req.query.limit) || defaultLimit, maxAllowedLimit);
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Build query object
-    const query = {};
-
-    if (q) {
-      
-      query.$or = [
-        { title: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
+    // Build filter object based on query parameters
+    const filter = {};
+    
+    // Search query (title or description)
+    if (req.query.q) {
+      filter.$or = [
+        { title: { $regex: req.query.q, $options: 'i' } },
+        { description: { $regex: req.query.q, $options: 'i' } }
       ];
     }
-    if (city) {
-      query.city = { $regex: city, $options: 'i' };
+
+    // Location filters
+    if (req.query.city) {
+      filter.city = { $regex: req.query.city, $options: 'i' };
     }
-    if (region) {
-      query.region = { $regex: region, $options: 'i' };
-    }
-    if (country) {
-      query.country = { $regex: country, $options: 'i' };
-    }
-    if (employmentType) {
-      query.employmentType = { $regex: employmentType, $options: 'i' };
-    }
-    if (hiringOrganizationName) {
-      query.hiringOrganizationName = { $regex: hiringOrganizationName, $options: 'i' };
-    }
-    if (skills) {
-      // Match jobs that have *any* of the provided skills
-      const skillArray = skills.split(',').map(s => s.trim());
-      query.skills = { $in: skillArray };
+    if (req.query.country) {
+      filter.country = { $regex: req.query.country, $options: 'i' };
     }
 
-    // Build sort object
-    const sort = {};
-    if (sortBy) {
-      // Example sortBy: 'salaryMin:asc', 'publishedAt:desc'
-      const [field, order] = sortBy.split(':');
-      sort[field] = order === 'asc' ? 1 : -1;
-    } else {
-      // Default sort by publishedAt descending
-      sort.publishedAt = -1;
+    // Role filter - Improved matching
+    if (req.query.role) {
+      // Create an array of common variations for the role
+      const roleVariations = [
+        req.query.role,
+        req.query.role.toLowerCase(),
+        req.query.role.toUpperCase(),
+        req.query.role.replace(/\s+/g, ''),
+        req.query.role.replace(/\s+/g, '-'),
+        req.query.role.replace(/\s+/g, '_')
+      ];
+
+      // Match against title or description
+      filter.$or = [
+        { title: { $in: roleVariations.map(role => new RegExp(role, 'i')) } },
+        { description: { $in: roleVariations.map(role => new RegExp(role, 'i')) } }
+      ];
+
+      // If we already have a search query, combine it with role filter
+      if (req.query.q) {
+        filter.$and = [
+          { $or: [
+            { title: { $regex: req.query.q, $options: 'i' } },
+            { description: { $regex: req.query.q, $options: 'i' } }
+          ]},
+          { $or: [
+            { title: { $in: roleVariations.map(role => new RegExp(role, 'i')) } },
+            { description: { $in: roleVariations.map(role => new RegExp(role, 'i')) } }
+          ]}
+        ];
+      }
     }
 
-    const totalJobs = await Job.countDocuments(query);
-    const jobs = await Job.find(query)
-      .sort(sort)
+    // Skills filter
+    if (req.query.skills) {
+      const skillsArray = req.query.skills.split(',').map(skill => skill.trim());
+      filter.skills = { $in: skillsArray.map(skill => new RegExp(skill, 'i')) };
+    }
+
+    // Get total count for pagination
+    const totalJobs = await Job.countDocuments(filter);
+    const totalPages = Math.ceil(totalJobs / limit);
+
+    // Get jobs with filters and pagination
+    const jobs = await Job.find(filter)
+      .sort({ publishedAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const totalPages = Math.ceil(totalJobs / limit);
-
-    // Using ApiResponse utility for consistent response format
-    res.status(200).json(
-      new ApiResponse(
-        200,
-        { jobs, totalJobs, totalPages, currentPage: page, limit },
-        "Jobs fetched successfully"
-      )
-    );
-
+    res.status(200).json(new ApiResponse(200, {
+      jobs,
+      currentPage: page,
+      totalPages,
+      totalJobs
+    }, "Jobs fetched successfully"));
   } catch (error) {
-    console.error('Error fetching jobs from MongoDB:', error);
-    throw new ApiError(500, "A problem occurred while fetching jobs.", error.message);
+    console.error('Error fetching jobs:', error);
+    throw new ApiError(500, "Error fetching jobs from database");
   }
-});
+};
 
 const fetchAndStoreJobs = asynchandler(async (req, res) => {
   console.log('Attempting to fetch and store jobs...');
