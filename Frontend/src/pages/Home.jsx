@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/authcontext';
 
 export default function Home() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('recent');
   const [notifications, setNotifications] = useState(3);
 
@@ -24,7 +26,7 @@ export default function Home() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, Alex!</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.fullname || user?.username || 'User'}!</h1>
                 <p className="text-gray-600">You have {notifications} new job matches and 2 interview invitations</p>
               </div>
               <div className="mt-4 md:mt-0 flex gap-3">
