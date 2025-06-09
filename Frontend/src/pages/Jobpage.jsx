@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../service/api.js'
+import {useParams, useSearchParams} from 'react-router-dom';
 export default function Jobpage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
@@ -13,6 +14,8 @@ export default function Jobpage() {
   const [salaryRange, setSalaryRange] = useState(''); // New state for salary range filter
   const [experienceLevel, setExperienceLevel] = useState(''); // New state for experience level
 
+
+  const [searchParams,setSearchParams]=useSearchParams();
   const fetchJobs = async () => {
     setLoading(true);
     setError(null);
@@ -26,12 +29,22 @@ export default function Jobpage() {
       if (location) params.append('city', location);
       if (skills) params.append('skills', skills);
       console.log("fetching rquest")
-      const response = await api.get('/jobs/jobs');
+      const response = await api.get('/jobs/jobs', {
+        params: {
+          page: currentPage,
+          limit: 10,
+          q: searchQuery || undefined,
+          city: location || undefined,
+          skills: skills || undefined,
+        }
+      });
+      
       console.log(response);
       if (response.status!=200) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data =  response.data
+      const data =response.data
+      console.log(data);
       setJobs(data.data.jobs);
       setTotalJobs(data.data.totalJobs);
       setTotalPages(data.data.totalPages);
@@ -49,7 +62,8 @@ export default function Jobpage() {
 
   useEffect(() => {
     fetchJobs();
-  }, [currentPage, searchQuery, location, skills, salaryRange, experienceLevel]); // Re-fetch when these change
+  },[currentPage])
+  // }, [currentPage, searchQuery, location, skills, salaryRange, experienceLevel]); // Re-fetch when these change
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -87,6 +101,7 @@ export default function Jobpage() {
   };
 
   const handlePageChange = (newPage) => {
+    setSearchParams({page:newPage})    // this will set page no in the url
     setCurrentPage(newPage);
   };
 
