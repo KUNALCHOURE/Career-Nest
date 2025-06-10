@@ -64,6 +64,15 @@ const userschema = new Schema({
   aiParsingError: {
     type: String,
   },
+
+  resumeFileUrl: { 
+    type: String,
+    default: null, 
+  },
+  resumeFilePublicId: {
+    type: String,
+    default: null, 
+  },
 }, { timestamps: true });
 
 userschema.pre("save", async function(next) {
