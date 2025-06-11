@@ -1,7 +1,28 @@
 import { Router } from "express";
-import { upload } from "../middleware/multermiddlewaare";
-import addresume from "../controlllers/resume.controllers";
-import {verifyJWT} from "../middleware/authmiddleware.js"
-const router=Router();
+import { upload } from "../middleware/multermiddlewaare.js";
+import { verifyJWT } from "../middleware/authmiddleware.js";
+import {
+    addResume,
+    deleteResume,
+    getResume,
+    updateResumeStatus
+} from "../controlllers/resume.controllers.js";
 
-router.route('/add-resume', verifyJWT, upload.single("resume"),addresume);
+const router = Router();
+
+// Apply verifyJWT middleware to all routes
+router.use(verifyJWT);
+
+// Add resume route
+router.post("/add", upload.single("resume"), addResume);
+
+// Delete resume route
+router.delete("/delete", deleteResume);
+
+// Get resume route
+router.get("/get", getResume);
+
+// Update resume status route
+router.patch("/update-status", updateResumeStatus);
+
+export default router;
