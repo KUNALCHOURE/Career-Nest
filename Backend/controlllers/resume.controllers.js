@@ -114,8 +114,40 @@ const getResume = asyncHandler(async (req, res) => {
     );
 });
 
+const updateResumeStatus = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+    const { status } = req.body;
+
+    if (!userId) {
+        throw new ApiError(401, "User not authenticated");
+    }
+
+    if (!status || !['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'].includes(status)) {
+        throw new ApiError(400, "Invalid status provided");
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        {
+            $set: {
+                aiParsingStatus: status
+            }
+        },
+        { new: true }
+    ).select("resumeFileUrl resumeUploadedAt aiParsingStatus");
+
+    if (!updatedUser) {
+        throw new ApiError(404, "User not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedUser, "Resume status updated successfully")
+    );
+});
+
 export {
     addResume,
     deleteResume,
-    getResume
+    getResume,
+    updateResumeStatus
 };
