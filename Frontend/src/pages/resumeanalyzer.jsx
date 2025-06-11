@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FiUpload, FiFileText, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import api from '../service/api';
 
 export default function Resumeanalyzer() {
   const [resumeFile, setResumeFile] = useState(null);
@@ -34,27 +35,40 @@ export default function Resumeanalyzer() {
     setError(null);
 
     try {
-      // TODO: Replace with actual API call
+      console.log("Starting resume analysis...");
+      
+      // Create FormData object
       const formData = new FormData();
       formData.append('resume', resumeFile);
       formData.append('jobDescription', jobDescription);
 
-      // Simulated API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulated response
-      setAnalysisResults({
-        score: 85,
-        missingKeywords: ['React', 'TypeScript', 'AWS'],
-        suggestions: [
-          'Add experience with React and TypeScript',
-          'Include AWS cloud experience',
-          'Highlight leadership experience'
-        ],
-        matchedKeywords: ['JavaScript', 'Node.js', 'MongoDB']
+      // Make the API request using the existing api instance
+      const response = await api.post('/resume/add', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
+      console.log("Resume upload response:", response);
+
+      if (response.status === 200) {
+        // TODO: Add job description analysis API call here
+        // For now, using mock data
+        setAnalysisResults({
+          score: 85,
+          missingKeywords: ['React', 'TypeScript', 'AWS'],
+          suggestions: [
+            'Add experience with React and TypeScript',
+            'Include AWS cloud experience',
+            'Highlight leadership experience'
+          ],
+          matchedKeywords: ['JavaScript', 'Node.js', 'MongoDB']
+        });
+      } else {
+        throw new Error('Failed to upload resume');
+      }
     } catch (err) {
-      setError('Failed to analyze resume. Please try again.');
+      console.error("Analysis error:", err);
+      setError(err.response?.data?.message || 'Failed to analyze resume. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
