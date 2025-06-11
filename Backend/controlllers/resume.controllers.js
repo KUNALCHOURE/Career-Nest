@@ -1,10 +1,11 @@
 import User from "../models/user.models.js";
-import { ApiError } from "../utils/ApiError.js";
-import { asyncHandler } from "../utils/asynchandler.js";
+import ApiError from "../utils/ApiError.js";
+import  asyncHandler  from "../utils/asynchandler.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
-import { ApiResponse } from "../utils/Apiresponse.js";
+import  ApiResponse  from "../utils/Apiresponse.js";
 
 const addResume = asyncHandler(async (req, res) => {
+    console.log("adding");
     if (!req.file) {
         throw new ApiError(400, "Resume file is required");
     }
@@ -14,24 +15,24 @@ const addResume = asyncHandler(async (req, res) => {
         throw new ApiError(401, "User not authenticated");
     }
 
-    // Get the current user to check if they have an existing resume
+   
     const currentUser = await User.findById(userId);
     if (!currentUser) {
         throw new ApiError(404, "User not found");
     }
 
-    // If user has an existing resume, delete it from Cloudinary
+
     if (currentUser.resumeFilePublicId) {
         await deleteFromCloudinary(currentUser.resumeFilePublicId);
     }
 
-    // Upload new resume to Cloudinary
+ 
     const cloudinaryResponse = await uploadOnCloudinary(req.file.path, userId);
     if (!cloudinaryResponse) {
         throw new ApiError(500, "Failed to upload resume to Cloudinary");
     }
 
-    // Update user with new resume information
+   
     const updatedUser = await User.findByIdAndUpdate(
         userId,
         {
@@ -48,10 +49,11 @@ const addResume = asyncHandler(async (req, res) => {
     if (!updatedUser) {
         throw new ApiError(500, "Failed to update user with resume information");
     }
-
+    console.log("resume added succesfully ");
     return res.status(200).json(
         new ApiResponse(200, updatedUser, "Resume uploaded successfully")
     );
+   
 });
 
 const deleteResume = asyncHandler(async (req, res) => {

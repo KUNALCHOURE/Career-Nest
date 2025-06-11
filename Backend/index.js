@@ -1,3 +1,4 @@
+dotenv.config();
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -6,6 +7,7 @@ import cookieParser from "cookie-parser";
 import userRoutes from './routes/user.routes.js'
 import cors from 'cors'
 import jobRoutes from './routes/jobs.route.js'
+import resumeRoutes from './routes/resume.route.js';
 
 const app=express();
 app.use(express.json({limit:"16kb"}));
@@ -17,7 +19,7 @@ app.use(cors({
   credentials:true,
  
 }))
-dotenv.config();
+
 
 const connectDB=async()=>{
     const res=mongoose.connect(process.env.MONGODB_URL)
@@ -34,7 +36,7 @@ connectDB();
 
 app.use("/api/v1/user",userRoutes);
 app.use("/api/v1/jobs",jobRoutes);
-
+app.use("/api/v1/resume",resumeRoutes);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
