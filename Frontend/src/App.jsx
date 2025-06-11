@@ -5,6 +5,7 @@ import { Route,Routes } from 'react-router-dom'
 import Register from './pages/Register'
 import Navbar from './components/navbar';
 import Home from './pages/Home.jsx';
+import Resumeanalyzer from './pages/resumeanalyzer.jsx'
 import { AuthProvider } from './context/authcontext.jsx'
 import Jobpage from './pages/Jobpage.jsx'
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path='/Register' element={<Register/>}></Route>
         <Route path='/home' element={<Home/>}></Route>
         <Route path='/jobs' element={<Jobpage/>}></Route>
+        <Route path='/Resume-analyzer'element={<Resumeanalyzer/>}></Route>
       </Routes>
       </AuthProvider>
     </>
