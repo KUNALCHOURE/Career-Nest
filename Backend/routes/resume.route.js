@@ -15,7 +15,7 @@ router.post("/add", upload.single("resume"), addResume);
 router.delete("/delete", deleteResume);
 router.get("/get", getResume);
 router.patch("/update-status", updateResumeStatus);
-router.post("/analyze-resume",analyzewithoutjd);
-
+router.post("/analyze-resume-witoutJD",analyzewithoutjd);
+router.post("/analyze-resume-withJD",analyzewithoutjd);
 
 export default router;
