@@ -8,6 +8,7 @@ import Home from './pages/Home.jsx';
 import Resumeanalyzer from './pages/resumeanalyzer.jsx'
 import { AuthProvider } from './context/authcontext.jsx'
 import Jobpage from './pages/Jobpage.jsx'
+import Profile from './pages/profile.jsx'
 function App() {
   return (
     <>
@@ -20,6 +21,7 @@ function App() {
         <Route path='/home' element={<Home/>}></Route>
         <Route path='/jobs' element={<Jobpage/>}></Route>
         <Route path='/Resume-analyzer'element={<Resumeanalyzer/>}></Route>
+        <Route path='/Profile' element={<Profile/>}/>
       </Routes>
       </AuthProvider>
     </>
