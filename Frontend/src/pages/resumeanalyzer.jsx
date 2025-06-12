@@ -8,6 +8,7 @@ export default function Resumeanalyzer() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResults, setAnalysisResults] = useState(null);
   const [error, setError] = useState(null);
+  const [analysisMode, setAnalysisMode] = useState('withJD'); 
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -26,8 +27,12 @@ export default function Resumeanalyzer() {
 
   const handleAnalyze = async (e) => {
     e.preventDefault();
-    if (!resumeFile || !jobDescription.trim()) {
-      setError('Please provide both a resume and job description');
+    if (!resumeFile) {
+      setError('Please upload a resume');
+      return;
+    }
+    if (analysisMode === 'withJD' && !jobDescription.trim()) {
+      setError('Please provide a job description');
       return;
     }
 
@@ -37,12 +42,12 @@ export default function Resumeanalyzer() {
     try {
       console.log("Starting resume analysis...");
       
-      // Create FormData object
       const formData = new FormData();
       formData.append('resume', resumeFile);
-      formData.append('jobDescription', jobDescription);
+      if (analysisMode === 'withJD') {
+        formData.append('jobDescription', jobDescription);
+      }
 
-      // Make the API request using the existing api instance
       const response = await api.post('/resume/add', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -80,8 +85,32 @@ export default function Resumeanalyzer() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Resume Analyzer</h1>
           <p className="text-lg text-gray-600">
-            Upload your resume and job description to get personalized feedback
+            Upload your resume and get personalized feedback
           </p>
+        </div>
+
+       
+        <div className="flex justify-center gap-4 mb-8">
+          <button
+            onClick={() => setAnalysisMode('withJD')}
+            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+              analysisMode === 'withJD'
+                ? 'bg-indigo-600 text-white shadow-lg scale-105'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            With Job Description
+          </button>
+          <button
+            onClick={() => setAnalysisMode('withoutJD')}
+            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+              analysisMode === 'withoutJD'
+                ? 'bg-indigo-600 text-white shadow-lg scale-105'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Without Job Description
+          </button>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -124,23 +153,25 @@ export default function Resumeanalyzer() {
               )}
             </div>
 
-            {/* Job Description Section */}
-            <div className="space-y-4">
-              <label htmlFor="job-description" className="block text-lg font-medium text-gray-900">
-                Job Description
-              </label>
-              <textarea
-                id="job-description"
-                name="job-description"
-                rows="6"
-                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-lg resize-none"
-                placeholder="Paste the job description here..."
-                value={jobDescription}
-                onChange={(e) => setJobDescription(e.target.value)}
-              />
-            </div>
+          
+            {analysisMode === 'withJD' && (
+              <div className="space-y-4">
+                <label htmlFor="job-description" className="block text-lg font-medium text-gray-900">
+                  Job Description
+                </label>
+                <textarea
+                  id="job-description"
+                  name="job-description"
+                  rows="6"
+                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-lg resize-none"
+                  placeholder="Paste the job description here..."
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                />
+              </div>
+            )}
 
-            {/* Error Display */}
+    
             {error && (
               <div className="rounded-md bg-red-50 p-4">
                 <div className="flex">
@@ -154,7 +185,7 @@ export default function Resumeanalyzer() {
               </div>
             )}
 
-            {/* Analyze Button */}
+       
             <div className="flex justify-center">
               <button
                 type="submit"
@@ -180,13 +211,13 @@ export default function Resumeanalyzer() {
             </div>
           </form>
 
-          {/* Analysis Results */}
+       
           {analysisResults && (
             <div className="mt-12 space-y-8">
               <div className="border-t border-gray-200 pt-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Analysis Results</h2>
                 
-                {/* Score Display */}
+             
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-medium text-gray-900">Relevance Score</h3>
@@ -200,7 +231,7 @@ export default function Resumeanalyzer() {
                   </div>
                 </div>
 
-                {/* Matched Keywords */}
+               
                 <div className="mb-8">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Matched Keywords</h3>
                   <div className="flex flex-wrap gap-2">
@@ -209,14 +240,13 @@ export default function Resumeanalyzer() {
                         key={index}
                         className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
                       >
-                        <FiCheckCircle className="mr-2 " />
+                        <FiCheckCircle className="mr-2" />
                         {keyword}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                {/* Missing Keywords */}
                 <div className="mb-8">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Missing Keywords</h3>
                   <div className="flex flex-wrap gap-2">
@@ -232,7 +262,7 @@ export default function Resumeanalyzer() {
                   </div>
                 </div>
 
-                {/* Suggestions */}
+             
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Suggestions for Improvement</h3>
                   <ul className="space-y-3">
