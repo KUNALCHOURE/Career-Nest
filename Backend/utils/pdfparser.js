@@ -1,17 +1,51 @@
-import fs from 'fs';
+// pdfTextExtractor.js
+
 import pdfParse from 'pdf-parse';
 
-export const extractTextFromPdf = async (filePath) => {
-    if (!fs.existsSync(filePath)) {
-        throw new Error(`File not found at path: ${filePath}`);
-    }
-
+export class PDFTextExtractor {
+  static async extractText(buffer) {
     try {
-        const dataBuffer = fs.readFileSync(filePath);
-        const data = await pdfParse(dataBuffer); // This is the core parsing call
-        return data.text; // 'data.text' contains the extracted plain text
+      const data = await pdfParse(buffer);
+
+      // Clean and structure the extracted text
+      const cleanedText = this.cleanText(data.text);
+
+      return {
+        rawText: data.text,
+        cleanedText: cleanedText,
+        metadata: {
+          pages: data.numpages,
+          info: data.info
+        }
+      };
     } catch (error) {
-        console.error(`Error parsing PDF at ${filePath}:`, error);
-        throw new Error(`Failed to extract text from PDF: ${error.message}`);
+      throw new Error(`PDF parsing failed: ${error.message}`);
     }
-};
+  }
+
+  static cleanText(text) {
+    let cleaned = text
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/\n\s*\n/g, '\n\n')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/^\s+|\s+$/gm, '')
+      .trim();
+
+    return cleaned;
+  }
+
+  static formatForAI(extractedData) {
+    const { cleanedText, metadata } = extractedData;
+
+    return {
+      content: cleanedText,
+      instruction: "Please analyze this resume and extract the following information in JSON format:",
+      context: {
+        documentType: "resume",
+        pages: metadata.pages,
+        extractedAt: new Date().toISOString()
+      }
+    };
+  }
+}

@@ -5,6 +5,7 @@ import {
     addResume,
     analyzewithoutjd,
     deleteResume,
+    extractdata,
     getResume,
     updateResumeStatus
 } from "../controlllers/resume.controllers.js";
@@ -17,5 +18,5 @@ router.get("/get", getResume);
 router.patch("/update-status", updateResumeStatus);
 router.post("/analyze-resume-witoutJD",analyzewithoutjd);
 router.post("/analyze-resume-withJD",analyzewithoutjd);
-
+router.post("/extract-data",upload.single("resume"),extractdata)
 export default router;

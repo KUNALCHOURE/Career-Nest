@@ -4,38 +4,8 @@ import asyncHandler from "../utils/asynchandler.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import ApiResponse from "../utils/Apiresponse.js";
 import openai from "../utils/ai.js";
-import ResumeParser from 'resume-parser';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-const parseResumeFile = async (filePath) => {
-  return new Promise((resolve, reject) => {
-    ResumeParser.parseResumeFile(filePath, (err, data) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      
-      // Combine all the parsed data into a single text
-      const parsedText = [
-        data.names?.join(' '),
-        data.emails?.join(' '),
-        data.phones?.join(' '),
-        data.addresses?.join(' '),
-        data.summary,
-        data.work?.map(job => `${job.title} at ${job.company}: ${job.description}`).join('\n'),
-        data.education?.map(edu => `${edu.degree} from ${edu.school}`).join('\n'),
-        data.skills?.join(', ')
-      ].filter(Boolean).join('\n\n');
-
-      resolve(parsedText);
-    });
-  });
-};
 
 const addResume = asyncHandler(async (req, res) => {
     console.log("adding");
@@ -148,6 +118,90 @@ const getResume = asyncHandler(async (req, res) => {
         new ApiResponse(200, user, "Resume information retrieved successfully")
     );
 });
+
+const extractdata = asyncHandler(async (req, res) => {
+    try {
+        // Check if file is uploaded
+        if (!req.file) {
+            throw new ApiError(400, "No file uploaded. Please upload a PDF resume.");
+        }
+
+        // Validate file type
+        if (req.file.mimetype !== 'application/pdf') {
+            throw new ApiError(400, "Invalid file type. Only PDF files are supported.");
+        }
+
+        // Validate file size (5MB limit)
+        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+        if (req.file.size > maxSize) {
+            throw new ApiError(400, "File size too large. Maximum size allowed is 5MB.");
+        }
+
+        // Extract text from PDF
+        const extractedData = await PDFTextExtractor.extractText(req.file.buffer);
+        
+        // Validate extracted text
+        if (!extractedData.cleanedText || extractedData.cleanedText.trim().length === 0) {
+            throw new ApiError(422, "Unable to extract readable text from the PDF. Please ensure the PDF contains selectable text.");
+        }
+
+        // Format data for AI analysis
+        const aiFormattedData = PDFTextExtractor.formatForAI(extractedData);
+
+        // Prepare response data
+        const responseData = {
+            extraction: {
+                success: true,
+                textLength: extractedData.cleanedText.length,
+                wordCount: extractedData.cleanedText.split(/\s+/).length,
+                extractedText: extractedData.cleanedText
+            },
+            metadata: extractedData.metadata,
+            aiPayload: {
+                prompt: aiFormattedData.aiPrompt,
+                context: aiFormattedData.context,
+                readyForAnalysis: true
+            },
+            file: {
+                originalName: req.file.originalname,
+                size: req.file.size,
+                mimeType: req.file.mimetype
+            }
+        };
+
+        // Return success response
+        return res
+            .status(200)
+            .json(new ApiResponse(
+                200, 
+                responseData, 
+                "Resume text extracted successfully and ready for AI analysis"
+            ));
+
+    } catch (error) {
+        // Handle different types of errors
+        if (error instanceof ApiError) {
+            return res
+                .status(error.statuscode)
+                .json(new ApiError(
+                    error.statuscode,
+                    error.message
+                ));
+        }
+
+        // Handle unexpected errors
+        console.error('Unexpected error in extractdata:', error);
+        return res
+            .status(500)
+            .json(new ApiError(
+                500,
+                "An unexpected error occurred while processing the resume",
+                [error.message]
+            ));
+    }
+});
+
+
 
 const updateResumeStatus = asyncHandler(async (req, res) => {
     const userId = req.user._id;
@@ -335,5 +389,6 @@ export {
   getResume,
   updateResumeStatus,
   analyzewithoutjd,
-  analyzewithjd
+  analyzewithjd,
+  extractdata
 };
