@@ -292,16 +292,31 @@ const analyzewithoutjd = asyncHandler(async(req, res) => {
             messages: [
                 {
                     role: "system",
-                    content: `You are an expert resume analyzer. Your task is to review a raw resume text, extract its key components, and provide general feedback based on resume best practices for readability, completeness, and clarity. Do NOT compare it to a job description. Provide your output in a structured JSON format.`
+                    content: `You are an elite résumé analyst and career-services writer.
+Your job is to:
+• Parse raw résumé text (no PDF or DOC layout cues are guaranteed).  
+• Extract every key data point recruiters, hiring managers, and ATS software look for.  
+• Detect and list ALL issues that hurt readability, professionalism, or ATS performance.  
+• Suggest concrete, best-practice fixes (e.g., stronger action verbs, quantifiable metrics, consistent tense, layout tweaks).  
+• Never evaluate the résumé against a specific job description.  
+• Output one VALID JSON object—nothing else.`
                 },
                 {
                     role: "user",
-                    content: `Analyze the following resume text. Extract the candidate's contact information, a summary/objective (if present), work experience, education, and skills. Also, provide general feedback on the resume's clarity, common formatting issues (e.g., use of bullet points, white space, readability), suggestions for improvement (e.g., use of action verbs, quantifiable achievements, conciseness), and overall completeness.
+                    content: `Analyse the following résumé.
+1. Extract the candidate's contact info, professional summary/objective, work history, education, certifications, projects, and skills.  
+2. Identify mistakes or areas for improvement under these buckets:  
+   • Clarity & Readability  
+   • Formatting & Design (headings, white space, bullet style, font consistency)  
+   • Action Verbs & Quantifiable Achievements  
+   • Conciseness & Relevance (remove fluff, redundancies)  
+   • Completeness (missing dates, unexplained gaps, absent sections)  
+   • ATS Compliance (keyword stuffing, graphics, tables, unusual characters)  
+3. Provide specific, actionable suggestions for each issue.  
+4. If a data element is not found, return an empty string (""), null, or an empty array [].  
+5. Do NOT create fictional data—only use what is present.  
+6. Return the response in this exact JSON schema:
 
-Resume Text:
-"${finaltext}"
-
-Format the output as a JSON object with the following keys:
 {
   "summary": {
     "overall_impression": "string",
@@ -318,6 +333,7 @@ Format the output as a JSON object with the following keys:
       {
         "title": "string",
         "company": "string",
+        "location": "string",
         "dates": "string",
         "responsibilities": "string"
       }
@@ -326,7 +342,22 @@ Format the output as a JSON object with the following keys:
       {
         "degree": "string",
         "institution": "string",
+        "location": "string",
         "graduation_date": "string"
+      }
+    ],
+    "certifications": [
+      {
+        "name": "string",
+        "issuer": "string",
+        "date": "string"
+      }
+    ],
+    "projects": [
+      {
+        "name": "string",
+        "description": "string",
+        "technologies": ["array of strings"]
       }
     ],
     "skills": ["array of strings"]
@@ -337,9 +368,15 @@ Format the output as a JSON object with the following keys:
     "action_verbs_quantifiables": "string",
     "conciseness": "string",
     "completeness": "string",
+    "ats_compliance": "string",
     "general_suggestions": ["array of strings"]
   }
-}`
+}
+
+Résumé Text:
+"""
+${finaltext}
+"""`
                 }
             ],
             response_format: { type: "json_object" },
