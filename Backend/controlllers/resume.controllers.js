@@ -278,78 +278,80 @@ const updateResumeStatus = asyncHandler(async (req, res) => {
 });
 
 const analyzewithoutjd = asyncHandler(async(req, res) => {
-  const { resumeText } = req.body;
-  
-  if (!resumeText) {
-    throw new ApiError(400, "Resume text is required");
-  }
+    const { resumeText } = req.body;
+    console.log(resumeText.text);
+    const finaltext = resumeText.text;
+    
+    if (!resumeText) {
+        throw new ApiError(400, "Resume text is required");
+    }
 
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo-0125",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert resume analyzer. Your task is to review a raw resume text, extract its key components, and provide general feedback based on resume best practices for readability, completeness, and clarity. Do NOT compare it to a job description. Provide your output in a structured JSON format.`,
-        },
-        {
-          role: "user",
-          content: `Analyze the following resume text. Extract the candidate's contact information, a summary/objective (if present), work experience, education, and skills. Also, provide general feedback on the resume's clarity, common formatting issues (e.g., use of bullet points, white space, readability), suggestions for improvement (e.g., use of action verbs, quantifiable achievements, conciseness), and overall completeness.
+    try {
+        const response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo-0125",
+            messages: [
+                {
+                    role: "system",
+                    content: `You are an expert resume analyzer. Your task is to review a raw resume text, extract its key components, and provide general feedback based on resume best practices for readability, completeness, and clarity. Do NOT compare it to a job description. Provide your output in a structured JSON format.`
+                },
+                {
+                    role: "user",
+                    content: `Analyze the following resume text. Extract the candidate's contact information, a summary/objective (if present), work experience, education, and skills. Also, provide general feedback on the resume's clarity, common formatting issues (e.g., use of bullet points, white space, readability), suggestions for improvement (e.g., use of action verbs, quantifiable achievements, conciseness), and overall completeness.
 
 Resume Text:
-"${resumeText}"
+"${finaltext}"
 
 Format the output as a JSON object with the following keys:
 {
- "summary": {
-   "overall_impression": "string",
-   "key_sections_found": ["array of strings"]
- },
- "extracted_data": {
-   "name": "string",
-   "email": "string",
-   "phone": "string",
-   "linkedin": "string",
-   "location": "string",
-   "objective_summary": "string",
-   "work_experience": [
-     {
-       "title": "string",
-       "company": "string",
-       "dates": "string",
-       "responsibilities": "string"
-     }
-   ],
-   "education": [
-     {
-       "degree": "string",
-       "institution": "string",
-       "graduation_date": "string"
-     }
-   ],
-   "skills": ["array of strings"]
- },
- "feedback": {
-   "clarity": "string",
-   "formatting": "string",
-   "action_verbs_quantifiables": "string",
-   "conciseness": "string",
-   "completeness": "string",
-   "general_suggestions": ["array of strings"]
- }
-}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-    });
-
-    const analysisResult = JSON.parse(response.choices[0].message.content);
-    res.json(new ApiResponse(200, analysisResult, "Resume analyzed successfully"));
-  } catch (error) {
-    console.error("Error analyzing resume without JD:", error);
-    throw new ApiError(400, "Problem occurred while analyzing the resume");
+  "summary": {
+    "overall_impression": "string",
+    "key_sections_found": ["array of strings"]
+  },
+  "extracted_data": {
+    "name": "string",
+    "email": "string",
+    "phone": "string",
+    "linkedin": "string",
+    "location": "string",
+    "objective_summary": "string",
+    "work_experience": [
+      {
+        "title": "string",
+        "company": "string",
+        "dates": "string",
+        "responsibilities": "string"
+      }
+    ],
+    "education": [
+      {
+        "degree": "string",
+        "institution": "string",
+        "graduation_date": "string"
+      }
+    ],
+    "skills": ["array of strings"]
+  },
+  "feedback": {
+    "clarity": "string",
+    "formatting": "string",
+    "action_verbs_quantifiables": "string",
+    "conciseness": "string",
+    "completeness": "string",
+    "general_suggestions": ["array of strings"]
   }
+}`
+                }
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.2
+        });
+
+        const analysisResult = JSON.parse(response.choices[0].message.content);
+        res.json(new ApiResponse(200, analysisResult, "Resume analyzed successfully"));
+    } catch (error) {
+        console.error("Error analyzing resume without JD:", error);
+        throw new ApiError(400, "Problem occurred while analyzing the resume");
+    }
 });
 
 const analyzewithjd = asyncHandler(async(req, res) => {
