@@ -288,11 +288,75 @@ const analyzewithoutjd = asyncHandler(async(req, res) => {
 
     try {
         const response = await openai.chat.completions.create({
-            model: "gpt-4", // Recommended for more nuanced analysis
+            model: "gpt-4-turbo-preview",
             messages: [
                 {
                     role: "system",
-                    content: "You are an elite résumé analyst and career-services writer. Your job is to: Parse raw résumé text (no PDF or DOC layout cues are guaranteed). Extract every key data point recruiters, hiring managers, and ATS software look for. Conduct a comprehensive, in-depth analysis of the résumé's content, structure, and strategic effectiveness. Detect and list ALL issues that hurt readability, professionalism, or ATS performance. Suggest concrete, best-practice fixes (e.g., stronger action verbs, quantifiable metrics, consistent tense, layout tweaks). Never evaluate the résumé against a specific job description. Focus on general best practices for strong, versatile resumes. Output one VALID JSON object—nothing else."
+                    content: `
+                  You are an expert resume analyzer AI. Your task is to thoroughly analyze the provided resume text and extract key information, provide detailed feedback, and offer suggestions for improvement based on standard resume best practices.
+                  The output must be a valid JSON object following the exact schema provided.
+      
+                  For any fields where information is not found in the resume, return an empty string "" for text fields, or an empty array [] for list/array fields. Do NOT return "string" or "array of strings".
+      
+                  Here's the JSON schema you must adhere to:
+                  {
+                    "summary": {
+                      "overall_impression": "",
+                      "key_sections_found": [],
+                      "strengths": []
+                    },
+                    "extracted_data": {
+                      "name": "",
+                      "email": "",
+                      "phone": "",
+                      "linkedin": "",
+                      "location": "",
+                      "objective_summary": "",
+                      "work_experience": [
+                        {
+                          "title": "",
+                          "company": "",
+                          "location": "",
+                          "dates": "",
+                          "responsibilities": ""
+                        }
+                      ],
+                      "education": [
+                        {
+                          "degree": "",
+                          "institution": "",
+                          "location": "",
+                          "graduation_date": ""
+                        }
+                      ],
+                      "certifications": [
+                        {
+                          "name": "",
+                          "issuer": "",
+                          "date": ""
+                        }
+                      ],
+                      "projects": [
+                        {
+                          "name": "",
+                          "description": "",
+                          "technologies": []
+                        }
+                      ],
+                      "skills": []
+                    },
+                    "feedback": {
+                      "clarity": "",
+                      "formatting": "",
+                      "action_verbs_quantifiables": "",
+                      "conciseness": "",
+                      "completeness": "",
+                      "ats_compliance": "",
+                      "general_suggestions": [],
+                      "key_areas_for_improvement": []
+                    }
+                  }
+                `,
                 },
                 {
                     role: "user",
@@ -317,58 +381,59 @@ const analyzewithoutjd = asyncHandler(async(req, res) => {
 
 {
   "summary": {
-    "overall_impression": "string",
-    "key_sections_found": ["array of strings"],
-    "strengths": ["array of strings"]
+    "overall_impression": "",
+    "key_sections_found": [],
+    "strengths": []
   },
   "extracted_data": {
-    "name": "string",
-    "email": "string",
-    "phone": "string",
-    "linkedin": "string",
-    "location": "string",
-    "objective_summary": "string",
+    "name": "",
+    "email": "",
+    "phone": "",
+    "linkedin": "",
+    "location": "",
+    "objective_summary": "",
     "work_experience": [
       {
-        "title": "string",
-        "company": "string",
-        "location": "string",
-        "dates": "string",
-        "responsibilities": "string"
+        "title": "",
+        "company": "",
+        "location": "",
+        "dates": "",
+        "responsibilities": ""
       }
     ],
     "education": [
       {
-        "degree": "string",
-        "institution": "string",
-        "location": "string",
-        "graduation_date": "string"
+        "degree": "",
+        "institution": "",
+        "location": "",
+        "graduation_date": ""
       }
     ],
     "certifications": [
       {
-        "name": "string",
-        "issuer": "string",
-        "date": "string"
+        "name": "",
+        "issuer": "",
+        "date": ""
       }
     ],
     "projects": [
       {
-        "name": "string",
-        "description": "string",
-        "technologies": ["array of strings"]
+        "name": "",
+        "description": "",
+        "technologies": []
       }
     ],
-    "skills": ["array of strings"]
+    "skills": []
   },
   "feedback": {
-    "clarity": "string",
-    "formatting": "string",
-    "action_verbs_quantifiables": "string",
-    "conciseness": "string",
-    "completeness": "string",
-    "ats_compliance": "string",
-    "general_suggestions": ["array of strings"]
+    "clarity": "",
+    "formatting": "",
+    "action_verbs_quantifiables": "",
+    "conciseness": "",
+    "completeness": "",
+    "ats_compliance": "",
+    "general_suggestions": [],
+    "key_areas_for_improvement": []
   }
 }
 
@@ -399,11 +464,87 @@ const analyzewithjd = asyncHandler(async(req, res) => {
 
     try {
         const response = await openai.chat.completions.create({
-            model: "gpt-4",
+            model: "gpt-4-turbo-preview",
             messages: [
                 {
                     role: "system",
-                    content: "You are an expert resume analyzer and job description matcher. Your task is to compare a provided resume against a specific job description. Identify key alignments and gaps, provide a compatibility score, and offer actionable feedback for the candidate to improve their resume's relevance to this job. Focus on matching skills, experience, and qualifications. Provide your output in a structured JSON format."
+                    content: `
+                  You are an expert resume and job description analyzer AI. Your task is to thoroughly analyze the provided resume text against the given job description.
+                  Extract key information from the resume, evaluate how well it matches the job description, provide detailed feedback, and offer suggestions for improvement.
+                  The output must be a valid JSON object following the exact schema provided.
+      
+                  For any fields where information is not found in the resume or not relevant to the job description, return an empty string "" for text fields, or an empty array [] for list/array fields.
+      
+                  Here's the JSON schema you must adhere to:
+                  {
+                    "summary": {
+                      "overall_impression": "",
+                      "job_match_score": 0,
+                      "key_sections_found": [],
+                      "strengths": [],
+                      "areas_for_improvement_based_on_jd": []
+                    },
+                    "extracted_data": {
+                      "name": "",
+                      "email": "",
+                      "phone": "",
+                      "linkedin": "",
+                      "location": "",
+                      "objective_summary": "",
+                      "work_experience": [
+                        {
+                          "title": "",
+                          "company": "",
+                          "location": "",
+                          "dates": "",
+                          "responsibilities": ""
+                        }
+                      ],
+                      "education": [
+                        {
+                          "degree": "",
+                          "institution": "",
+                          "location": "",
+                          "graduation_date": ""
+                        }
+                      ],
+                      "certifications": [
+                        {
+                          "name": "",
+                          "issuer": "",
+                          "date": ""
+                        }
+                      ],
+                      "projects": [
+                        {
+                          "name": "",
+                          "description": "",
+                          "technologies": []
+                        }
+                      ],
+                      "skills": []
+                    },
+                    "feedback": {
+                      "clarity": "",
+                      "formatting": "",
+                      "action_verbs_quantifiables": "",
+                      "conciseness": "",
+                      "completeness": "",
+                      "ats_compliance": "",
+                      "general_suggestions": [],
+                      "key_areas_for_improvement": []
+                    },
+                    "job_description_analysis": {
+                      "required_skills_found": [],
+                      "matching_skills": [],
+                      "missing_required_skills": [],
+                      "relevant_experience_match": "",
+                      "education_match": "",
+                      "overall_match_analysis": "",
+                      "suggestions_for_jd_alignment": []
+                    }
+                  }
+                `,
                 },
                 {
                     role: "user",
@@ -412,52 +553,90 @@ const analyzewithjd = asyncHandler(async(req, res) => {
 1. Extract Data: Identify and extract the candidate's contact information, skills, and relevant experiences that match the job requirements.
 
 2. Conduct In-Depth Analysis & Identify Issues: Evaluate the resume against the job description for:
-   - Skill Match: Compare required skills with candidate's skills
-   - Experience Alignment: Match job requirements with candidate's experience
-   - Qualification Fit: Assess if candidate meets educational and certification requirements
-   - Keyword Optimization: Check for relevant keywords from the job description
-   - Missing Requirements: Identify gaps between resume and job requirements
-   - Strengths for Role: Highlight candidate's strengths relevant to the position
+   - Skill Match: Compare required skills from JD with candidate's skills. List exact matching skills and specific missing skills.
+   - Experience Alignment: Match job requirements with candidate's experience. Highlight relevant experiences and point out any experience gaps.
+   - Qualification Fit: Assess if candidate meets educational and certification requirements as per JD.
+   - Keyword Optimization: Check for relevant keywords from the job description and suggest areas for better integration.
+   - Missing Requirements: Identify specific gaps between resume and job requirements that are not covered by other sections.
+   - Strengths for Role: Highlight candidate's strengths specifically relevant to the position.
 
 3. Populate JSON Schema:
    - If a data element is not found, return an empty string (""), null, or an empty array []
    - Do NOT create fictional data—only use what is present in the resume
-   - For strengths_for_this_role, list specific positive aspects that match the job
-   - For areas_for_improvement, list the 2-3 most critical gaps that need attention
+   - For summary.job_match_score, provide a numerical percentage (0-100) indicating the overall match.
+   - For summary.strengths, list specific positive aspects of the resume, especially those relevant to the JD.
+   - For summary.areas_for_improvement_based_on_jd, list the 2-3 most critical issues for this specific job.
+   - For job_description_analysis.required_skills_found, list skills mentioned in JD and found in resume.
+   - For job_description_analysis.missing_required_skills, list skills required by JD but not found in resume.
+   - For job_description_analysis.suggestions_for_jd_alignment, provide specific advice on how to tailor the resume for this JD.
    - Return the entire response in the exact JSON schema provided below
 
 {
   "summary": {
-    "match_score_percentage": "number",
-    "overall_assessment": "string",
-    "key_alignments": ["array of strings"],
-    "major_gaps": ["array of strings"]
+    "overall_impression": "",
+    "job_match_score": 0,
+    "key_sections_found": [],
+    "strengths": [],
+    "areas_for_improvement_based_on_jd": []
   },
   "extracted_data": {
-    "name": "string",
-    "email": "string",
-    "skills": ["array of strings"],
-    "top_experiences": [
+    "name": "",
+    "email": "",
+    "phone": "",
+    "linkedin": "",
+    "location": "",
+    "objective_summary": "",
+    "work_experience": [
       {
-        "title": "string",
-        "company": "string",
-        "relevance": "string",
-        "key_achievements": ["array of strings"]
+        "title": "",
+        "company": "",
+        "location": "",
+        "dates": "",
+        "responsibilities": ""
       }
-    ]
-  },
-  "alignment_details": {
-    "matching_skills": ["array of strings"],
-    "missing_skills_in_resume": ["array of strings"],
-    "relevant_experience_highlights": ["array of strings"],
-    "experience_gaps_for_jd": ["array of strings"],
-    "keyword_alignment": "string"
+    ],
+    "education": [
+      {
+        "degree": "",
+        "institution": "",
+        "location": "",
+        "graduation_date": ""
+      }
+    ],
+    "certifications": [
+      {
+        "name": "",
+        "issuer": "",
+        "date": ""
+      }
+    ],
+    "projects": [
+      {
+        "name": "",
+        "description": "",
+        "technologies": []
+      }
+    ],
+    "skills": []
   },
   "feedback": {
-    "resume_optimization_suggestions": ["array of strings"],
-    "areas_for_improvement": ["array of strings"],
-    "strengths_for_this_role": ["array of strings"],
-    "general_suggestions": ["array of strings"]
+    "clarity": "",
+    "formatting": "",
+    "action_verbs_quantifiables": "",
+    "conciseness": "",
+    "completeness": "",
+    "ats_compliance": "",
+    "general_suggestions": [],
+    "key_areas_for_improvement": []
+  },
+  "job_description_analysis": {
+    "required_skills_found": [],
+    "matching_skills": [],
+    "missing_required_skills": [],
+    "relevant_experience_match": "",
+    "education_match": "",
+    "overall_match_analysis": "",
+    "suggestions_for_jd_alignment": []
   }
 }
 
