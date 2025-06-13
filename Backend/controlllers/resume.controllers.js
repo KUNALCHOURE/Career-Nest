@@ -4,8 +4,8 @@ import asyncHandler from "../utils/asynchandler.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import ApiResponse from "../utils/Apiresponse.js";
 import openai from "../utils/ai.js";
-
-
+import { Resume } from "../models/resume.model.js";
+import fs from "fs";
 
 const addResume = asyncHandler(async (req, res) => {
     console.log("adding");
@@ -18,24 +18,20 @@ const addResume = asyncHandler(async (req, res) => {
         throw new ApiError(401, "User not authenticated");
     }
 
-   
     const currentUser = await User.findById(userId);
     if (!currentUser) {
         throw new ApiError(404, "User not found");
     }
 
-
     if (currentUser.resumeFilePublicId) {
         await deleteFromCloudinary(currentUser.resumeFilePublicId);
     }
 
- 
     const cloudinaryResponse = await uploadOnCloudinary(req.file.path, userId);
     if (!cloudinaryResponse) {
         throw new ApiError(500, "Failed to upload resume to Cloudinary");
     }
 
-   
     const updatedUser = await User.findByIdAndUpdate(
         userId,
         {
@@ -56,7 +52,6 @@ const addResume = asyncHandler(async (req, res) => {
     return res.status(200).json(
         new ApiResponse(200, updatedUser, "Resume uploaded successfully")
     );
-   
 });
 
 const deleteResume = asyncHandler(async (req, res) => {
@@ -120,88 +115,104 @@ const getResume = asyncHandler(async (req, res) => {
 });
 
 const extractdata = asyncHandler(async (req, res) => {
+    let filePath = null;
+    
     try {
-        // Check if file is uploaded
+        // Validate file upload
         if (!req.file) {
-            throw new ApiError(400, "No file uploaded. Please upload a PDF resume.");
+            throw new ApiError(400, "No file uploaded. Please upload a resume file.");
         }
 
-        // Validate file type
-        if (req.file.mimetype !== 'application/pdf') {
-            throw new ApiError(400, "Invalid file type. Only PDF files are supported.");
-        }
-
-        // Validate file size (5MB limit)
-        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-        if (req.file.size > maxSize) {
-            throw new ApiError(400, "File size too large. Maximum size allowed is 5MB.");
-        }
-
-        // Extract text from PDF
-        const extractedData = await PDFTextExtractor.extractText(req.file.buffer);
+        filePath = req.file.path;
         
-        // Validate extracted text
-        if (!extractedData.cleanedText || extractedData.cleanedText.trim().length === 0) {
-            throw new ApiError(422, "Unable to extract readable text from the PDF. Please ensure the PDF contains selectable text.");
+        // Validate file type
+        const allowedMimeTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        
+        if (!allowedMimeTypes.includes(req.file.mimetype)) {
+            throw new ApiError(400, "Invalid file type. Only PDF, DOC, and DOCX files are supported.");
         }
 
-        // Format data for AI analysis
-        const aiFormattedData = PDFTextExtractor.formatForAI(extractedData);
+        // Upload to Cloudinary
+        const cloudinaryResponse = await uploadOnCloudinary(filePath);
+        
+        if (!cloudinaryResponse) {
+            throw new ApiError(500, "Failed to upload file to cloud storage");
+        }
 
-        // Prepare response data
-        const responseData = {
-            extraction: {
-                success: true,
-                textLength: extractedData.cleanedText.length,
-                wordCount: extractedData.cleanedText.split(/\s+/).length,
-                extractedText: extractedData.cleanedText
-            },
-            metadata: extractedData.metadata,
-            aiPayload: {
-                prompt: aiFormattedData.aiPrompt,
-                context: aiFormattedData.context,
-                readyForAnalysis: true
-            },
-            file: {
-                originalName: req.file.originalname,
-                size: req.file.size,
-                mimeType: req.file.mimetype
-            }
-        };
+        // Create resume record
+        const resume = await Resume.create({
+            user: req.user._id,
+            fileUrl: cloudinaryResponse.secure_url,
+            fileType: req.file.mimetype,
+            fileName: req.file.originalname,
+            fileSize: req.file.size
+        });
 
-        // Return success response
         return res
             .status(200)
             .json(new ApiResponse(
-                200, 
-                responseData, 
-                "Resume text extracted successfully and ready for AI analysis"
+                200,
+                {
+                    resume,
+                    fileInfo: {
+                        name: req.file.originalname,
+                        size: req.file.size,
+                        type: req.file.mimetype,
+                        url: cloudinaryResponse.secure_url
+                    }
+                },
+                "Resume uploaded successfully"
             ));
 
     } catch (error) {
-        // Handle different types of errors
+        console.error('Resume upload error:', error);
+
+        // Clean up uploaded file on error
+        if (filePath && fs.existsSync(filePath)) {
+            try {
+                fs.unlinkSync(filePath);
+                console.log(`Cleaned up file: ${filePath}`);
+            } catch (cleanupError) {
+                console.error('Failed to cleanup file:', cleanupError);
+            }
+        }
+
+        // Handle specific error types
         if (error instanceof ApiError) {
             return res
                 .status(error.statuscode)
-                .json(new ApiError(
-                    error.statuscode,
-                    error.message
-                ));
+                .json(error);
         }
 
-        // Handle unexpected errors
-        console.error('Unexpected error in extractdata:', error);
+        // Handle file system errors
+        if (error.code === 'ENOENT') {
+            return res
+                .status(404)
+                .json(new ApiError(404, "Uploaded file not found."));
+        }
+
+        // Generic error handling
         return res
             .status(500)
             .json(new ApiError(
-                500,
-                "An unexpected error occurred while processing the resume",
+                500, 
+                "Failed to process resume. Please try again.",
                 [error.message]
             ));
     }
 });
 
-
+const getResumes = asyncHandler(async (req, res) => {
+    const resumes = await Resume.find({ user: req.user._id });
+    
+    return res
+        .status(200)
+        .json(new ApiResponse(200, resumes, "Resumes fetched successfully"));
+});
 
 const updateResumeStatus = asyncHandler(async (req, res) => {
     const userId = req.user._id;
@@ -235,17 +246,13 @@ const updateResumeStatus = asyncHandler(async (req, res) => {
 });
 
 const analyzewithoutjd = asyncHandler(async(req, res) => {
-  if (!req.file) {
-    throw new ApiError(400, "Resume file is required");
+  const { resumeText } = req.body;
+  
+  if (!resumeText) {
+    throw new ApiError(400, "Resume text is required");
   }
 
   try {
-    // Parse the resume file
-    const resumeText = await parseResumeFile(req.file.path);
-    
-    // Clean up the temporary file
-    fs.unlinkSync(req.file.path);
-
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo-0125",
       messages: [
@@ -307,25 +314,20 @@ Format the output as a JSON object with the following keys:
 
     const analysisResult = JSON.parse(response.choices[0].message.content);
     res.json(new ApiResponse(200, analysisResult, "Resume analyzed successfully"));
-
   } catch (error) {
     console.error("Error analyzing resume without JD:", error);
-    res.json(new ApiError(400, "Problem occurred while analyzing the resume"));
+    throw new ApiError(400, "Problem occurred while analyzing the resume");
   }
 });
 
 const analyzewithjd = asyncHandler(async(req, res) => {
-  if (!req.file || !req.body.jobDescription) {
-    throw new ApiError(400, "Resume file and job description are required");
+  const { resumeText, jobDescription } = req.body;
+  
+  if (!resumeText || !jobDescription) {
+    throw new ApiError(400, "Resume text and job description are required");
   }
 
   try {
-    // Parse the resume file
-    const resumeText = await parseResumeFile(req.file.path);
-    
-    // Clean up the temporary file
-    fs.unlinkSync(req.file.path);
-
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo-0125",
       messages: [
@@ -341,7 +343,7 @@ Resume Text:
 "${resumeText}"
 
 Job Description Text:
-"${req.body.jobDescription}"
+"${jobDescription}"
 
 Provide the following analysis in a structured JSON format:
 {
@@ -376,10 +378,9 @@ Provide the following analysis in a structured JSON format:
 
     const analysisResult = JSON.parse(response.choices[0].message.content);
     res.json(new ApiResponse(200, analysisResult, "Resume analyzed against Job Description successfully"));
-
   } catch (error) {
     console.error("Error analyzing resume with JD:", error);
-    res.json(new ApiError(400, "Problem occurred while analyzing the resume against the Job Description"));
+    throw new ApiError(400, "Problem occurred while analyzing the resume against the Job Description");
   }
 });
 
@@ -390,5 +391,6 @@ export {
   updateResumeStatus,
   analyzewithoutjd,
   analyzewithjd,
-  extractdata
+  extractdata,
+  getResumes
 };

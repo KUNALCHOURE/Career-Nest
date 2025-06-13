@@ -1,51 +1,18 @@
-// pdfTextExtractor.js
+// pdfParser.js
+import fs from 'fs';
+import { createRequire } from 'module';
 
-import pdfParse from 'pdf-parse';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 
-export class PDFTextExtractor {
-  static async extractText(buffer) {
-    try {
-      const data = await pdfParse(buffer);
+const resumePath = 'C:/Users/Kunal/Desktop/JOB_BOARD/backend/utils/resume.pdf';
 
-      // Clean and structure the extracted text
-      const cleanedText = this.cleanText(data.text);
-
-      return {
-        rawText: data.text,
-        cleanedText: cleanedText,
-        metadata: {
-          pages: data.numpages,
-          info: data.info
-        }
-      };
-    } catch (error) {
-      throw new Error(`PDF parsing failed: ${error.message}`);
-    }
-  }
-
-  static cleanText(text) {
-    let cleaned = text
-      .replace(/\r\n/g, '\n')
-      .replace(/\r/g, '\n')
-      .replace(/\n\s*\n/g, '\n\n')
-      .replace(/[ \t]+/g, ' ')
-      .replace(/^\s+|\s+$/gm, '')
-      .trim();
-
-    return cleaned;
-  }
-
-  static formatForAI(extractedData) {
-    const { cleanedText, metadata } = extractedData;
-
-    return {
-      content: cleanedText,
-      instruction: "Please analyze this resume and extract the following information in JSON format:",
-      context: {
-        documentType: "resume",
-        pages: metadata.pages,
-        extractedAt: new Date().toISOString()
-      }
-    };
-  }
+async function parseResume(filePath) {
+  const buffer = fs.readFileSync(filePath);
+  const data = await pdfParse(buffer); // This is where the error happens if pdfParse isn't loaded correctly
+  console.log("✅ PDF text:\n", data.text);
 }
+
+parseResume(resumePath).catch((err) => {
+  console.error("❌ Parsing error:", err);
+});
