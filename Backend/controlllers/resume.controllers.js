@@ -4,8 +4,9 @@ import asyncHandler from "../utils/asynchandler.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import ApiResponse from "../utils/Apiresponse.js";
 import openai from "../utils/ai.js";
-import { Resume } from "../models/resume.model.js";
+
 import fs from "fs";
+import PDFTextExtractor from "../utils/pdfParser.js";
 
 const addResume = asyncHandler(async (req, res) => {
     console.log("adding");
@@ -136,40 +137,64 @@ const extractdata = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Invalid file type. Only PDF, DOC, and DOCX files are supported.");
         }
 
-        // Upload to Cloudinary
-        const cloudinaryResponse = await uploadOnCloudinary(filePath);
-        
-        if (!cloudinaryResponse) {
-            throw new ApiError(500, "Failed to upload file to cloud storage");
+        console.log(`Processing file: ${req.file.originalname} at ${filePath}`);
+
+        let extractedData;
+        const fileBuffer = fs.readFileSync(filePath);
+
+        // Handle different file types
+        if (req.file.mimetype === 'application/pdf') {
+            extractedData = await PDFTextExtractor.extractText(fileBuffer);
+        } 
+        else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            extractedData = await PDFTextExtractor.extractDOCX(fileBuffer);
+        }
+        else if (req.file.mimetype === 'application/msword') {
+            throw new ApiError(422, "Legacy DOC format is not supported. Please convert to PDF or DOCX format.");
         }
 
-        // Create resume record
-        const resume = await Resume.create({
-            user: req.user._id,
-            fileUrl: cloudinaryResponse.secure_url,
-            fileType: req.file.mimetype,
-            fileName: req.file.originalname,
-            fileSize: req.file.size
-        });
+        // Validate extracted content
+        if (!extractedData || !extractedData.cleanedText || extractedData.cleanedText.trim().length < 10) {
+            throw new ApiError(422, "Unable to extract readable text from the file. Please ensure the document contains selectable text.");
+        }
+
+        // Format for AI analysis
+        const aiFormattedData = PDFTextExtractor.formatForAI(extractedData);
+
+        // Calculate text statistics
+        const words = extractedData.cleanedText.split(/\s+/).filter(word => word.length > 0);
+        const textStats = {
+            characterCount: extractedData.cleanedText.length,
+            wordCount: words.length,
+            lineCount: extractedData.cleanedText.split('\n').length,
+            pageCount: extractedData.metadata.pages || 1
+        };
 
         return res
             .status(200)
             .json(new ApiResponse(
                 200,
                 {
-                    resume,
-                    fileInfo: {
-                        name: req.file.originalname,
-                        size: req.file.size,
-                        type: req.file.mimetype,
-                        url: cloudinaryResponse.secure_url
+                    extraction: {
+                        success: true,
+                        extractedAt: new Date().toISOString(),
+                        stats: textStats
+                    },
+                    content: {
+                        text: extractedData.cleanedText,
+                        preview: extractedData.cleanedText.substring(0, 300) + '...'
+                    },
+                    aiPayload: {
+                        prompt: aiFormattedData.aiPrompt,
+                        context: aiFormattedData.context,
+                        readyForAnalysis: true
                     }
                 },
-                "Resume uploaded successfully"
+                `File processed successfully. Extracted ${textStats.wordCount} words from ${textStats.pageCount} pages.`
             ));
 
     } catch (error) {
-        console.error('Resume upload error:', error);
+        console.error('Resume processing error:', error);
 
         // Clean up uploaded file on error
         if (filePath && fs.existsSync(filePath)) {
@@ -193,6 +218,13 @@ const extractdata = asyncHandler(async (req, res) => {
             return res
                 .status(404)
                 .json(new ApiError(404, "Uploaded file not found."));
+        }
+
+        // Handle PDF parsing errors
+        if (error.message.includes('Invalid PDF')) {
+            return res
+                .status(422)
+                .json(new ApiError(422, "Invalid or corrupted PDF file."));
         }
 
         // Generic error handling
