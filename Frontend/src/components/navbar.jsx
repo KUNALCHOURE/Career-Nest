@@ -44,14 +44,12 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
-            <a href="/home" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
-              Home
-            </a>
+           
             <a href="/jobs" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
               Browse Jobs
             </a>
-            <a href="/companies" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
-              Companies
+            <a href="/Resume-analyzer" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
+              Resume Analysis
             </a>
             <a href="/about" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
               About

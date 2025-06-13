@@ -309,6 +309,19 @@ export default function Jobpage() {
           </div>
         </div>
 
+        {/* Advertise Resume Analyzer */}
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-2xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 mb-8 animate-fade-in-up animation-delay-400">
+          <div className="text-center md:text-left">
+            <h2 className="text-2xl font-bold mb-2">Boost Your Job Application with AI!</h2>
+            <p className="text-blue-100">Get instant, intelligent feedback on your resume. Analyze for clarity, impact, and job description alignment.</p>
+          </div>
+          <a href="/Resume-analyzer" className="flex-shrink-0">
+            <button className="bg-white text-indigo-600 hover:bg-gray-100 px-6 py-3 rounded-lg font-semibold shadow-md transition-colors duration-200 transform hover:scale-105">
+              Analyze My Resume
+            </button>
+          </a>
+        </div>
+
         {/* Results Summary */}
         <div className="mb-6 flex justify-between items-center animate-fade-in">
           <p className="text-gray-600">
