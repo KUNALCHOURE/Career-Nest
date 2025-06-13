@@ -288,39 +288,38 @@ const analyzewithoutjd = asyncHandler(async(req, res) => {
 
     try {
         const response = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo-0125",
+            model: "gpt-4", // Recommended for more nuanced analysis
             messages: [
                 {
                     role: "system",
-                    content: `You are an elite résumé analyst and career-services writer.
-Your job is to:
-• Parse raw résumé text (no PDF or DOC layout cues are guaranteed).  
-• Extract every key data point recruiters, hiring managers, and ATS software look for.  
-• Detect and list ALL issues that hurt readability, professionalism, or ATS performance.  
-• Suggest concrete, best-practice fixes (e.g., stronger action verbs, quantifiable metrics, consistent tense, layout tweaks).  
-• Never evaluate the résumé against a specific job description.  
-• Output one VALID JSON object—nothing else.`
+                    content: "You are an elite résumé analyst and career-services writer. Your job is to: Parse raw résumé text (no PDF or DOC layout cues are guaranteed). Extract every key data point recruiters, hiring managers, and ATS software look for. Conduct a comprehensive, in-depth analysis of the résumé's content, structure, and strategic effectiveness. Detect and list ALL issues that hurt readability, professionalism, or ATS performance. Suggest concrete, best-practice fixes (e.g., stronger action verbs, quantifiable metrics, consistent tense, layout tweaks). Never evaluate the résumé against a specific job description. Focus on general best practices for strong, versatile resumes. Output one VALID JSON object—nothing else."
                 },
                 {
                     role: "user",
                     content: `Analyse the following résumé.
-1. Extract the candidate's contact info, professional summary/objective, work history, education, certifications, projects, and skills.  
-2. Identify mistakes or areas for improvement under these buckets:  
-   • Clarity & Readability  
-   • Formatting & Design (headings, white space, bullet style, font consistency)  
-   • Action Verbs & Quantifiable Achievements  
-   • Conciseness & Relevance (remove fluff, redundancies)  
-   • Completeness (missing dates, unexplained gaps, absent sections)  
-   • ATS Compliance (keyword stuffing, graphics, tables, unusual characters)  
-3. Provide specific, actionable suggestions for each issue.  
-4. If a data element is not found, return an empty string (""), null, or an empty array [].  
-5. Do NOT create fictional data—only use what is present.  
-6. Return the response in this exact JSON schema:
+
+1. Extract Data: Identify and extract the candidate's contact information (name, email, phone, LinkedIn, location), professional summary/objective, detailed work history (title, company, location, dates, responsibilities/achievements), education, certifications, projects, and skills.
+
+2. Conduct In-Depth Analysis & Identify Issues: Evaluate the resume against the following criteria, providing detailed feedback for each. For each category, first state any issues found, then provide specific, actionable suggestions for improvement.
+   - Clarity & Readability: Assess if the language is clear, concise, and easy to understand. Are there vague phrases, jargon, or overly complex sentences?
+   - Formatting & Consistency: Evaluate implied formatting (e.g., heading structure, use of whitespace based on line breaks, bullet style consistency). Check for grammatical consistency, tense agreement, and uniform date formats.
+   - Action Verbs & Quantifiable Achievements: Determine if strong, impactful action verbs are used. Are accomplishments quantified with specific numbers, percentages, or tangible results? Identify opportunities to add metrics.
+   - Conciseness & Relevance: Identify any redundant information, filler words, or irrelevant details. Is every statement adding value?
+   - Completeness & Gaps: Check for missing dates, unexplained employment gaps, or absent standard sections.
+   - ATS & Keyword Optimization: Analyze the natural integration and presence of industry-relevant keywords. Point out potential keyword stuffing or areas where crucial keywords might be missing for general industry roles.
+
+3. Populate JSON Schema:
+   - If a data element for extracted_data is not found, return an empty string (""), null, or an empty array [].
+   - Do NOT create fictional data—only use what is present in the resume text.
+   - For the summary.strengths array, list specific positive aspects of the resume.
+   - For feedback.key_areas_for_improvement, list the 2-3 most critical issues that need immediate attention from the user.
+   - Return the entire response in the exact JSON schema provided below.
 
 {
   "summary": {
     "overall_impression": "string",
-    "key_sections_found": ["array of strings"]
+    "key_sections_found": ["array of strings"],
+    "strengths": ["array of strings"]
   },
   "extracted_data": {
     "name": "string",
@@ -392,41 +391,60 @@ ${finaltext}
 });
 
 const analyzewithjd = asyncHandler(async(req, res) => {
-  const { resumeText, jobDescription } = req.body;
-  
-  if (!resumeText || !jobDescription) {
-    throw new ApiError(400, "Resume text and job description are required");
-  }
+    const { resumeText, jobDescription } = req.body;
+    
+    if (!resumeText || !jobDescription) {
+        throw new ApiError(400, "Resume text and job description are required");
+    }
 
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo-0125",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert resume analyzer and job description matcher. Your task is to compare a provided resume against a specific job description. Identify key alignments and gaps, provide a compatibility score, and offer actionable feedback for the candidate to improve their resume's relevance to this job. Provide your output in a structured JSON format.`,
-        },
-        {
-          role: "user",
-          content: `Analyze the following resume in comparison to the job description provided.
+    try {
+        const response = await openai.chat.completions.create({
+            model: "gpt-4",
+            messages: [
+                {
+                    role: "system",
+                    content: "You are an expert resume analyzer and job description matcher. Your task is to compare a provided resume against a specific job description. Identify key alignments and gaps, provide a compatibility score, and offer actionable feedback for the candidate to improve their resume's relevance to this job. Focus on matching skills, experience, and qualifications. Provide your output in a structured JSON format."
+                },
+                {
+                    role: "user",
+                    content: `Analyze the following resume in comparison to the job description provided.
 
-Resume Text:
-"${resumeText}"
+1. Extract Data: Identify and extract the candidate's contact information, skills, and relevant experiences that match the job requirements.
 
-Job Description Text:
-"${jobDescription}"
+2. Conduct In-Depth Analysis & Identify Issues: Evaluate the resume against the job description for:
+   - Skill Match: Compare required skills with candidate's skills
+   - Experience Alignment: Match job requirements with candidate's experience
+   - Qualification Fit: Assess if candidate meets educational and certification requirements
+   - Keyword Optimization: Check for relevant keywords from the job description
+   - Missing Requirements: Identify gaps between resume and job requirements
+   - Strengths for Role: Highlight candidate's strengths relevant to the position
 
-Provide the following analysis in a structured JSON format:
+3. Populate JSON Schema:
+   - If a data element is not found, return an empty string (""), null, or an empty array []
+   - Do NOT create fictional data—only use what is present in the resume
+   - For strengths_for_this_role, list specific positive aspects that match the job
+   - For areas_for_improvement, list the 2-3 most critical gaps that need attention
+   - Return the entire response in the exact JSON schema provided below
+
 {
   "summary": {
     "match_score_percentage": "number",
-    "overall_assessment": "string"
+    "overall_assessment": "string",
+    "key_alignments": ["array of strings"],
+    "major_gaps": ["array of strings"]
   },
   "extracted_data": {
     "name": "string",
     "email": "string",
     "skills": ["array of strings"],
-    "top_experiences": ["array of strings"]
+    "top_experiences": [
+      {
+        "title": "string",
+        "company": "string",
+        "relevance": "string",
+        "key_achievements": ["array of strings"]
+      }
+    ]
   },
   "alignment_details": {
     "matching_skills": ["array of strings"],
@@ -438,21 +456,32 @@ Provide the following analysis in a structured JSON format:
   "feedback": {
     "resume_optimization_suggestions": ["array of strings"],
     "areas_for_improvement": ["array of strings"],
-    "strengths_for_this_role": ["array of strings"]
+    "strengths_for_this_role": ["array of strings"],
+    "general_suggestions": ["array of strings"]
   }
-}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
-    });
+}
 
-    const analysisResult = JSON.parse(response.choices[0].message.content);
-    res.json(new ApiResponse(200, analysisResult, "Resume analyzed against Job Description successfully"));
-  } catch (error) {
-    console.error("Error analyzing resume with JD:", error);
-    throw new ApiError(400, "Problem occurred while analyzing the resume against the Job Description");
-  }
+Resume Text:
+"""
+${resumeText}
+"""
+
+Job Description Text:
+"""
+${jobDescription}
+"""`
+                }
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.2
+        });
+
+        const analysisResult = JSON.parse(response.choices[0].message.content);
+        res.json(new ApiResponse(200, analysisResult, "Resume analyzed against Job Description successfully"));
+    } catch (error) {
+        console.error("Error analyzing resume with JD:", error);
+        throw new ApiError(400, "Problem occurred while analyzing the resume against the Job Description");
+    }
 });
 
 export {
