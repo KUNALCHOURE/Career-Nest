@@ -20,11 +20,10 @@ function App() {
     <AuthProvider>
        <Navbar/>
       <Routes>
-        {/* Public routes */}
         <Route path='/login' element={<Login />} />
         <Route path='/Register' element={<Register/>}></Route>
 
-        {/* Protected routes - accessible only after login */}
+
         <Route path='/' element={<PrivateRoute><Jobpage /></PrivateRoute>} />
         <Route path='/jobs' element={<PrivateRoute><Jobpage/></PrivateRoute>}></Route>
         <Route path='/Resume-analyzer'element={<PrivateRoute><Resumeanalyzer/></PrivateRoute>}></Route>

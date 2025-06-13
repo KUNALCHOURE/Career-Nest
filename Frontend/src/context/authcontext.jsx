@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
 
             setUser(response.data);
             toast.success('Welcome back!');
-            navigate("/home");
+            navigate("/jobs");
         } catch (error) {
             toast.error(error.message || 'Login failed. Please try again.');
             throw error;
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
 
             setUser(response.data);
             toast.success('Registration successful!');
-            navigate("/home");
+            navigate("/jobs");
         } catch (error) {
             console.error("Error during registration:", error);
             const errorMessage = error?.message || error?.response?.data?.message || "Signup failed. Please try again.";
