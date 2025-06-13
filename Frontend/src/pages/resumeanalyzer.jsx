@@ -42,34 +42,40 @@ export default function Resumeanalyzer() {
     try {
       console.log("Starting resume analysis...");
       
+      // First extract the text from the resume
       const formData = new FormData();
       formData.append('resume', resumeFile);
-      if (analysisMode === 'withJD') {
-        formData.append('jobDescription', jobDescription);
-      }
-
-      const response = await api.post('/resume/add', formData, {
+      
+      const extractResponse = await api.post('/resume/extract', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      console.log("Resume upload response:", response);
 
-      if (response.status === 200) {
-        // TODO: Add job description analysis API call here
-        // For now, using mock data
-        setAnalysisResults({
-          score: 85,
-          missingKeywords: ['React', 'TypeScript', 'AWS'],
-          suggestions: [
-            'Add experience with React and TypeScript',
-            'Include AWS cloud experience',
-            'Highlight leadership experience'
-          ],
-          matchedKeywords: ['JavaScript', 'Node.js', 'MongoDB']
+      if (!extractResponse.data.data.extraction.success) {
+        throw new Error('Failed to extract text from resume');
+      }
+
+      const { extractedText } = extractResponse.data.data.extraction;
+      console.log("Text extracted successfully");
+
+      // Then analyze based on mode
+      let analysisResponse;
+      if (analysisMode === 'withJD') {
+        analysisResponse = await api.post('/resume/analyze-with-jd', {
+          resumeText: extractedText,
+          jobDescription
         });
       } else {
-        throw new Error('Failed to upload resume');
+        analysisResponse = await api.post('/resume/analyze-without-jd', {
+          resumeText: extractedText
+        });
+      }
+
+      if (analysisResponse.status === 200) {
+        setAnalysisResults(analysisResponse.data.data);
+      } else {
+        throw new Error('Failed to analyze resume');
       }
     } catch (err) {
       console.error("Analysis error:", err);
