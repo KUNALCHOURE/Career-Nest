@@ -1,6 +1,6 @@
 import Job from '../models/job.model.js';
 import ApiError from "../utils/Apierror.js";
-import ApiResponse from "../utils/apiresponse.js";
+import ApiResponse from "../utils/Apiresponse.js";
 import asynchandler from "../utils/asynchandler.js";
 
 
