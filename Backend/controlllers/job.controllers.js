@@ -2,6 +2,7 @@ import Job from '../models/job.model.js';
 import ApiError from "../utils/Apierror.js";
 import ApiResponse from "../utils/Apiresponse.js";
 import asynchandler from "../utils/asynchandler.js";
+import { parseJobDescription } from "../utils/jobParser.js";
 
 
 const getalljob = async (req, res) => {
@@ -13,11 +14,14 @@ const getalljob = async (req, res) => {
     // Build filter object based on query parameters
     const filter = {};
     
-    // Search query (title or description)
+    // Search query (title, description, and parsed fields)
     if (req.query.q) {
       filter.$or = [
         { title: { $regex: req.query.q, $options: 'i' } },
-        { description: { $regex: req.query.q, $options: 'i' } }
+        { description: { $regex: req.query.q, $options: 'i' } },
+        { qualifications: { $regex: req.query.q, $options: 'i' } },
+        { essentialFunctions: { $regex: req.query.q, $options: 'i' } },
+        { preferredSkills: { $regex: req.query.q, $options: 'i' } }
       ];
     }
 
@@ -41,10 +45,11 @@ const getalljob = async (req, res) => {
         req.query.role.replace(/\s+/g, '_')
       ];
 
-      // Match against title or description
+      // Match against title, description, and parsed fields
       filter.$or = [
         { title: { $in: roleVariations.map(role => new RegExp(role, 'i')) } },
-        { description: { $in: roleVariations.map(role => new RegExp(role, 'i')) } }
+        { description: { $in: roleVariations.map(role => new RegExp(role, 'i')) } },
+        { essentialFunctions: { $in: roleVariations.map(role => new RegExp(role, 'i')) } }
       ];
 
       // If we already have a search query, combine it with role filter
@@ -52,20 +57,44 @@ const getalljob = async (req, res) => {
         filter.$and = [
           { $or: [
             { title: { $regex: req.query.q, $options: 'i' } },
-            { description: { $regex: req.query.q, $options: 'i' } }
+            { description: { $regex: req.query.q, $options: 'i' } },
+            { qualifications: { $regex: req.query.q, $options: 'i' } },
+            { essentialFunctions: { $regex: req.query.q, $options: 'i' } },
+            { preferredSkills: { $regex: req.query.q, $options: 'i' } }
           ]},
           { $or: [
             { title: { $in: roleVariations.map(role => new RegExp(role, 'i')) } },
-            { description: { $in: roleVariations.map(role => new RegExp(role, 'i')) } }
+            { description: { $in: roleVariations.map(role => new RegExp(role, 'i')) } },
+            { essentialFunctions: { $in: roleVariations.map(role => new RegExp(role, 'i')) } }
           ]}
         ];
       }
     }
 
-    // Skills filter
+    // Skills filter - Now includes both API skills and parsed skills
     if (req.query.skills) {
       const skillsArray = req.query.skills.split(',').map(skill => skill.trim());
-      filter.skills = { $in: skillsArray.map(skill => new RegExp(skill, 'i')) };
+      filter.$or = [
+        { skills: { $in: skillsArray.map(skill => new RegExp(skill, 'i')) } },
+        { preferredSkills: { $in: skillsArray.map(skill => new RegExp(skill, 'i')) } },
+        { qualifications: { $in: skillsArray.map(skill => new RegExp(skill, 'i')) } }
+      ];
+    }
+
+    // Salary range filter
+    if (req.query.minSalary || req.query.maxSalary) {
+      filter.salary = {};
+      if (req.query.minSalary) {
+        filter.salary.$gte = parseInt(req.query.minSalary);
+      }
+      if (req.query.maxSalary) {
+        filter.salary.$lte = parseInt(req.query.maxSalary);
+      }
+    }
+
+    // Employment type filter
+    if (req.query.employmentType) {
+      filter.employmentType = { $regex: req.query.employmentType, $options: 'i' };
     }
 
     // Get total count for pagination
@@ -105,26 +134,20 @@ const fetchAndStoreJobs = asynchandler(async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        q: "Software Developer", // Example query, you might want to make this dynamic or fetch a wider range
+        q: "Software Developer",
       })
     });
 
     if (!apiResponse.ok) {
-      const errorText = await apiResponse.text(); // Get raw error text
+      const errorText = await apiResponse.text();
       console.error(`External API responded with status ${apiResponse.status}: ${errorText}`);
       throw new ApiError(apiResponse.status, `Failed to fetch jobs from external API. Status: ${apiResponse.status}, Message: ${errorText.substring(0, 100)}...`);
     }
-   // console.log(apiResponse);
 
     const apiJobsData = await apiResponse.json();
-    // await fs.writeFile('api_response_debug.json', JSON.stringify(apiJobsData, null, 2)); // Remove fs.writeFile
-    // console.log('Current Working Directory:', process.cwd()); // Remove cwd log
-    // console.log('Full API response written to Backend/api_response_debug.json');
     console.log(`Successfully fetched ${apiJobsData.hits?.length || 0} jobs from external API.`);
-    //console.log(apiJobsData.jobs);
+
     if (!apiJobsData.hits || !Array.isArray(apiJobsData.hits)) {
-      // console.error('Debug: apiJobsData.jobs is:', apiJobsData.jobs);
-      // console.error('Debug: Array.isArray(apiJobsData.jobs) is:', Array.isArray(apiJobsData.jobs));
       console.error('Invalid API response format:', JSON.stringify(apiJobsData, null, 2));
       throw new ApiError(500, 'Invalid data format from external API.');
     }
@@ -133,44 +156,158 @@ const fetchAndStoreJobs = asynchandler(async (req, res) => {
     let newJobsCount = 0;
     let updatedJobsCount = 0;
     let errorCount = 0;
+    let validationErrors = [];
 
     for (const jobData of fetchedJobs) {
       try {
         console.log('Processing job:', jobData.id);
         
-        // Map external API data (snake_case) to Mongoose Job model schema (camelCase)
-        const mappedJob = {
+        // Validate required fields from API
+        if (!jobData.id || !jobData.title || !jobData.description) {
+          console.warn(`Skipping job ${jobData.id} - Missing required fields`);
+          validationErrors.push({
+            jobId: jobData.id,
+            error: 'Missing required fields'
+          });
+          continue;
+        }
+
+        // Parse the job description
+        const parsedJob = parseJobDescription(jobData.description);
+        
+        // Log parsed data for verification
+        console.log('Parsed job data:', {
+          jobCode: parsedJob.jobCode,
+          essentialFunctions: parsedJob.essentialFunctions?.length,
+          qualifications: parsedJob.qualifications?.length,
+          preferredSkills: parsedJob.preferredSkills?.length
+        });
+
+        // Create the job document with proper formatting and validation
+        const jobDocument = {
+          // Required fields from API
           apijobsId: jobData.id,
-          title: jobData.title,
-          description: jobData.description,
-          url: jobData.url,
-          publishedAt: jobData.published_at,
-          hiringOrganizationName: jobData.hiring_organization_name,
-          hiringOrganizationLogo: jobData.hiring_organization_logo,
-          website: jobData.website,
-          websiteId: jobData.website_id,
-          country: jobData.country,
-          region: jobData.region,
-          city: jobData.city,
-          createdAt: jobData.created_at
+          title: jobData.title?.trim() || 'Untitled Position',
+          description: jobData.description?.trim() || '',
+          url: jobData.url || '',
+          publishedAt: jobData.published_at ? new Date(jobData.published_at) : new Date(),
+          
+          // Optional fields from API
+          hiringOrganizationName: jobData.hiring_organization_name?.trim() || 'Unknown Company',
+          hiringOrganizationLogo: jobData.hiring_organization_logo || '',
+          website: jobData.website || '',
+          websiteId: jobData.website_id || '',
+          country: jobData.country?.trim() || '',
+          region: jobData.region?.trim() || '',
+          city: jobData.city?.trim() || '',
+          
+          // Parsed fields with proper validation
+          jobCode: parsedJob.jobCode?.trim() || '',
+          essentialFunctions: Array.isArray(parsedJob.essentialFunctions) 
+            ? parsedJob.essentialFunctions
+                .map(fn => fn.trim())
+                .filter(Boolean)
+            : [],
+          qualifications: Array.isArray(parsedJob.qualifications)
+            ? parsedJob.qualifications
+                .map(q => q.trim())
+                .filter(Boolean)
+            : [],
+          preferredSkills: Array.isArray(parsedJob.preferredSkills)
+            ? parsedJob.preferredSkills
+                .map(skill => skill.trim())
+                .filter(Boolean)
+            : [],
+          salary: parsedJob.salary?.trim() || '',
+          benefits: Array.isArray(parsedJob.benefits)
+            ? parsedJob.benefits
+                .map(benefit => benefit.trim())
+                .filter(Boolean)
+            : [],
+          compliance: typeof parsedJob.compliance === 'string' 
+            ? parsedJob.compliance.trim() 
+            : Array.isArray(parsedJob.compliance)
+              ? parsedJob.compliance.map(c => c.trim()).filter(Boolean)
+              : '',
+          employmentType: jobData.employment_type?.trim() || parsedJob.employmentType?.trim() || 'Full-time',
+          
+          // Timestamps
+          createdAt: new Date(),
+          updatedAt: new Date()
         };
 
-        console.log('Mapped job data:', JSON.stringify(mappedJob, null, 2));
-
-        // Find and update, or insert if not found (upsert)
-        const result = await Job.findOneAndUpdate(
-          { apijobsId: mappedJob.apijobsId },
-          { $set: mappedJob },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
+        // Validate the document before saving
+        const validationErrors = [];
         
-        if (result && result._id) {
-          if (result.createdAt.getTime() === result.updatedAt.getTime()) {
-            newJobsCount++;
-            console.log(`Created new job with ID: ${result._id}`);
-          } else {
+        // Check required fields
+        if (!jobDocument.apijobsId) validationErrors.push('Missing apijobsId');
+        if (!jobDocument.title) validationErrors.push('Missing title');
+        if (!jobDocument.description) validationErrors.push('Missing description');
+        if (!jobDocument.url) validationErrors.push('Missing url');
+        if (!jobDocument.publishedAt) validationErrors.push('Missing publishedAt');
+
+        // Log validation errors if any
+        if (validationErrors.length > 0) {
+          console.error('Validation errors for job:', {
+            apijobsId: jobDocument.apijobsId,
+            errors: validationErrors
+          });
+          errorCount++;
+          continue;
+        }
+
+        // First check if job exists
+        const existingJob = await Job.findOne({ apijobsId: jobDocument.apijobsId });
+
+        if (existingJob) {
+          // Log the differences before update
+          console.log('Updating existing job:', {
+            id: existingJob._id,
+            changes: {
+              title: existingJob.title !== jobDocument.title,
+              description: existingJob.description !== jobDocument.description,
+              skills: existingJob.preferredSkills?.length !== jobDocument.preferredSkills?.length,
+              parsedFields: {
+                jobCode: existingJob.jobCode !== jobDocument.jobCode,
+                essentialFunctions: existingJob.essentialFunctions?.length !== jobDocument.essentialFunctions?.length,
+                qualifications: existingJob.qualifications?.length !== jobDocument.qualifications?.length,
+                preferredSkills: existingJob.preferredSkills?.length !== jobDocument.preferredSkills?.length,
+                benefits: existingJob.benefits?.length !== jobDocument.benefits?.length
+              }
+            }
+          });
+
+          // Update existing job
+          const updatedJob = await Job.findByIdAndUpdate(
+            existingJob._id,
+            { 
+              $set: {
+                ...jobDocument,
+                updatedAt: new Date()
+              }
+            },
+            { 
+              new: true,
+              runValidators: true
+            }
+          );
+          
+          if (updatedJob) {
             updatedJobsCount++;
-            console.log(`Updated existing job with ID: ${result._id}`);
+            console.log(`Successfully updated job with ID: ${updatedJob._id}`);
+          } else {
+            console.error(`Failed to update job ${existingJob._id}`);
+            errorCount++;
+          }
+        } else {
+          // Create new job
+          const newJob = await Job.create(jobDocument);
+          if (newJob) {
+            newJobsCount++;
+            console.log(`Successfully created new job with ID: ${newJob._id}`);
+          } else {
+            console.error(`Failed to create new job for ${jobDocument.apijobsId}`);
+            errorCount++;
           }
         }
       } catch (innerError) {
@@ -180,7 +317,7 @@ const fetchAndStoreJobs = asynchandler(async (req, res) => {
       }
     }
 
-    console.log(`Job processing complete. New: ${newJobsCount}, Updated: ${updatedJobsCount}, Errors: ${errorCount}`);
+    console.log(`Job processing complete. New: ${newJobsCount}, Updated: ${updatedJobsCount}, Errors: ${errorCount}, Validation Errors: ${validationErrors.length}`);
 
     res.status(200).json(
       new ApiResponse(
@@ -189,6 +326,7 @@ const fetchAndStoreJobs = asynchandler(async (req, res) => {
           newJobs: newJobsCount, 
           updatedJobs: updatedJobsCount, 
           errorCount,
+          validationErrors,
           totalFetched: fetchedJobs.length 
         },
         `Successfully processed jobs. New: ${newJobsCount}, Updated: ${updatedJobsCount}, Errors: ${errorCount}`
