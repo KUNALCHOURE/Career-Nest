@@ -1,49 +1,38 @@
-
 import { v2 as cloudinary } from 'cloudinary';
-import fs from 'fs'; 
 import dotenv from 'dotenv'
 dotenv.config();
 
 cloudinary.config({
-    cloud_name:process.env.CLOUDINARY_CLOUD_NAME,
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-
-
-const uploadOnCloudinary = async (localFilePath, userId) => { 
+const uploadOnCloudinary = async (fileBuffer, userId) => { 
     try {
-        if (!localFilePath) {
-            console.error("No local file path provided for Cloudinary upload.");
+        if (!fileBuffer) {
+            console.error("No file buffer provided for Cloudinary upload.");
             return null;
         }
 
-        if (!fs.existsSync(localFilePath)) {
-            console.error(`Local file not found at path: ${localFilePath}`);
-            return null;
-        }
+        // Convert buffer to base64
+        const b64 = Buffer.from(fileBuffer).toString('base64');
+        const dataURI = `data:application/pdf;base64,${b64}`;
 
-        const response = await cloudinary.uploader.upload(localFilePath, {
+        const response = await cloudinary.uploader.upload(dataURI, {
             resource_type: "raw", 
             folder: "resumes",   
             public_id: userId ? `resume_${userId}` : `resume_${Date.now()}`, 
             overwrite: true    
         });
 
-        fs.unlinkSync(localFilePath);
-
         return response;
 
     } catch (error) {
         console.error("Cloudinary upload failed:", error);
-        if (fs.existsSync(localFilePath)) {
-            fs.unlinkSync(localFilePath);
-        }
         return null;
     }
 };
-
 
 const deleteFromCloudinary = async (publicId) => {
     try {
@@ -54,7 +43,7 @@ const deleteFromCloudinary = async (publicId) => {
         const result = await cloudinary.uploader.destroy(publicId, {
             resource_type: "raw" 
         });
-         console.log("File deleted from Cloudinary:", result); 
+        console.log("File deleted from Cloudinary:", result); 
         return result;
     } catch (error) {
         console.error("Error deleting from Cloudinary:", error);

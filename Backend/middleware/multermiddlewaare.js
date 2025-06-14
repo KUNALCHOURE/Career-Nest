@@ -1,24 +1,13 @@
 import multer from 'multer';
 import path from 'path';
-import ApiError  from '../utils/Apierror.js';
+import ApiError from '../utils/Apierror.js';
 
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/resumes/');
-    },
-    filename: function (req, file, cb) {
-        // Create unique filename with timestamp
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
+// Use memory storage instead of disk storage
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-    
     if (file.mimetype === 'application/pdf' ||
-        file.mimetype === 'application/msword' || // For .doc files (less common but good to include)
+        file.mimetype === 'application/msword' || // For .doc files
         file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // For .docx files
     ) {
         cb(null, true);

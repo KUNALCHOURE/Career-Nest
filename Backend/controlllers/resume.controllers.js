@@ -28,7 +28,7 @@ const addResume = asyncHandler(async (req, res) => {
         await deleteFromCloudinary(currentUser.resumeFilePublicId);
     }
 
-    const cloudinaryResponse = await uploadOnCloudinary(req.file.path, userId);
+    const cloudinaryResponse = await uploadOnCloudinary(req.file.buffer, userId);
     if (!cloudinaryResponse) {
         throw new ApiError(500, "Failed to upload resume to Cloudinary");
     }
@@ -49,7 +49,7 @@ const addResume = asyncHandler(async (req, res) => {
     if (!updatedUser) {
         throw new ApiError(500, "Failed to update user with resume information");
     }
-    console.log("resume added succesfully ");
+    console.log("resume added successfully ");
     return res.status(200).json(
         new ApiResponse(200, updatedUser, "Resume uploaded successfully")
     );
