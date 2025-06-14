@@ -1,9 +1,15 @@
 import { Router } from "express";
-import { getalljob, fetchAndStoreJobs } from "../controlllers/job.controllers.js";
-const route=Router();
-//we do not need to define query parameters explicitly in Express route path.
-route.get('/jobs',getalljob);
+import { getalljob, fetchAndStoreJobs, getJobById } from "../controlllers/job.controllers.js";
 
-route.post('/jobs/fetch-and-store', fetchAndStoreJobs);
+const router = Router();
 
-export default route;
+// Route to get all jobs with filters and pagination
+router.route("/jobs").get(getalljob);
+
+// Route to fetch and store jobs from external API
+router.route("/jobs/fetch-and-store").post(fetchAndStoreJobs);
+
+// Route to get a single job by ID
+router.route("/jobs/:jobId").get(getJobById);
+
+export default router; 

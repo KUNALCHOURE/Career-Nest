@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authcontext';
+import api from '../service/api';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,9 +22,16 @@ const Navbar = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      const response = await api.post('/user/logout');
+      if (response.data.success) {
+        await logout();
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
@@ -51,9 +59,9 @@ const Navbar = () => {
             <a href="/Resume-analyzer" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
               Resume Analysis
             </a>
-            <a href="/about" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
+            {/* <a href="/about" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors duration-200">
               About
-            </a>
+            </a> */}
           </div>
 
           {/* Desktop Auth Buttons */}
@@ -106,78 +114,66 @@ const Navbar = () => {
         <div className={`lg:hidden transition-all duration-500 ${
           isMenuOpen ? 'max-h-90 opacity-100 pb-6' : 'max-h-0 opacity-0 overflow-hidden'
         }`}>
-          <div className="pt-4 space-y-4 border-t border-gray-200">
-            <a 
-              href="/home" 
-              className="block text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Home
-            </a>
-            <a 
-              href="/jobs" 
-              className="block text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Browse Jobs
-            </a>
-            <a 
-              href="/companies" 
-              className="block text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Companies
-            </a>
-            <a 
-              href="/about" 
-              className="block text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              About
-            </a>
-            
-            {/* Mobile Auth Buttons */}
-            {!user ? (
-              <div className="pt-4 space-y-3 border-t border-gray-200">
-                <button 
-                  className="w-full text-left text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    navigate('/login');
-                  }}
+          <div className="px-4 pt-2 pb-3 space-y-1 bg-white border-t">
+            {user ? (
+              // Mobile menu for logged in users
+              <>
+                <Link 
+                  to="/jobs" 
+                  className="block px-3 py-2 text-gray-600 hover:text-indigo-600"
+                  onClick={() => setIsMenuOpen(false)}
                 >
-                  Login
-                </button>
-                <button 
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    navigate('/register');
-                  }}
+                  Find Jobs
+                </Link>
+                <Link 
+                  to="/Resume-analyzer" 
+                  className="block px-3 py-2 text-gray-600 hover:text-indigo-600"
+                  onClick={() => setIsMenuOpen(false)}
                 >
-                  Register
-                </button>
-              </div>
-            ) : (
-              <div className="pt-4 space-y-3 border-t border-gray-200">
-                <div className="flex items-center space-x-2 px-4 py-2">
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <span className="text-indigo-600 font-medium">
-                      {user.username ? user.username[0].toUpperCase() : 'U'}
-                    </span>
-                  </div>
-                  <span className="text-gray-700 font-medium">{user.username || 'User'}</span>
-                </div>
+                  Resume Analyzer
+                </Link>
+                <Link 
+                  to="/Profile" 
+                  className="block px-3 py-2 text-gray-600 hover:text-indigo-600"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Profile
+                </Link>
                 <button
                   onClick={() => {
                     handleLogout();
                     setIsMenuOpen(false);
                   }}
-                  className="w-full text-left text-gray-700 hover:text-indigo-600 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                  className="block w-full text-left px-3 py-2 text-red-600 hover:text-red-700"
                 >
                   Logout
                 </button>
-              </div>
+              </>
+            ) : (
+              // Mobile menu for non-logged in users
+              <>
+                <Link 
+                  to="/jobs" 
+                  className="block px-3 py-2 text-gray-600 hover:text-indigo-600"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Find Jobs
+                </Link>
+                <Link 
+                  to="/login" 
+                  className="block px-3 py-2 text-gray-600 hover:text-indigo-600"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link 
+                  to="/Register" 
+                  className="block px-3 py-2 text-gray-600 hover:text-indigo-600"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
             )}
           </div>
         </div>
