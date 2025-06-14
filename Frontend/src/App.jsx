@@ -1,13 +1,14 @@
 import './App.css'
-import Landing from './components/Landing'
 import Login from './pages/Login'
-import { Route,Routes, Navigate } from 'react-router-dom'
+import { Route, Routes, Navigate } from 'react-router-dom'
 import Register from './pages/Register'
 import Navbar from './components/navbar';
 import Resumeanalyzer from './pages/resumeanalyzer.jsx'
 import { AuthProvider, useAuth } from './context/authcontext.jsx'
 import Jobpage from './pages/Jobpage.jsx'
 import Profile from './pages/profile.jsx'
+import Landing from './components/Landing.jsx'
+import JobDetails from './pages/JobDetails'
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -17,18 +18,20 @@ function PrivateRoute({ children }) {
 function App() {
   return (
     <>
-    <AuthProvider>
-       <Navbar/>
-      <Routes>
-        <Route path='/login' element={<Login />} />
-        <Route path='/Register' element={<Register/>}></Route>
+      <AuthProvider>
+        <Navbar />
+        <Routes>
+          {/* Public routes */}
+          <Route path='/login' element={<Login />} />
+          <Route path='/Register' element={<Register />} />
+          <Route path='/' element={<Landing />} />
 
-
-        <Route path='/' element={<PrivateRoute><Jobpage /></PrivateRoute>} />
-        <Route path='/jobs' element={<PrivateRoute><Jobpage/></PrivateRoute>}></Route>
-        <Route path='/Resume-analyzer'element={<PrivateRoute><Resumeanalyzer/></PrivateRoute>}></Route>
-        <Route path='/Profile' element={<PrivateRoute><Profile/></PrivateRoute>}/>
-      </Routes>
+          {/* Protected routes - accessible only after login */}
+          <Route path='/jobs' element={<PrivateRoute><Jobpage /></PrivateRoute>} />
+          <Route path='/Resume-analyzer' element={<PrivateRoute><Resumeanalyzer /></PrivateRoute>} />
+          <Route path='/Profile' element={<PrivateRoute><Profile /></PrivateRoute>} />
+          <Route path='/jobs/:jobId' element={<PrivateRoute><JobDetails /></PrivateRoute>} />
+        </Routes>
       </AuthProvider>
     </>
   )

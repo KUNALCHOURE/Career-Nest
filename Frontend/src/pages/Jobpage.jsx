@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../service/api.js';
 import { useSearchParams } from 'react-router-dom';
+import JobCard from '../components/JobCard';
 
 // Custom debounce function
 const debounce = (func, wait) => {
@@ -51,6 +52,7 @@ export default function Jobpage() {
       }
 
       const data = response.data;
+      console.log(data.data.jobs);
       setJobs(data.data.jobs);
       setTotalJobs(data.data.totalJobs);
       setTotalPages(data.data.totalPages);
@@ -338,7 +340,7 @@ export default function Jobpage() {
         {/* Job Listings */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {loading &&
-            [1, 2, 3, 4].map((i) => <LoadingCard key={i} />)}
+            [1, 2, 3, 4].map((i) => <LoadingCard key={`loading-${i}`} />)}
 
           {!loading && jobs.length === 0 && !error && (
             <div className="lg:col-span-2 text-center py-16">
@@ -353,75 +355,11 @@ export default function Jobpage() {
           {!loading &&
             jobs.length > 0 &&
             jobs.map((job, index) => (
-              <div
-                key={job.id}
-                className="bg-white rounded-xl shadow-sm p-6 hover:shadow-xl transition-all duration-300 border border-gray-100 transform hover:-translate-y-1 animate-slide-in-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900 hover:text-[#4f3ff0] cursor-pointer transition-colors">
-                    {job.title}
-                  </h2>
-                  {job.employmentType && (
-                    <span className="bg-[#4f3ff0]/10 text-[#4f3ff0] text-sm font-medium px-3 py-1 rounded-full">
-                      {job.employmentType}
-                    </span>
-                  )}
-                </div>
-                
-                <div className="mb-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    {job.hiringOrganizationLogo && (
-                      <img
-                        src={job.hiringOrganizationLogo}
-                        alt={job.hiringOrganizationName}
-                        className="h-8 w-8 object-contain rounded-full animate-float"
-                      />
-                    )}
-                    <h3 className="text-lg text-gray-700 font-medium">{job.hiringOrganizationName}</h3>
-                  </div>
-                  <div className="flex items-center text-gray-500 mt-1">
-                    <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>
-                      {job.city}
-                      {job.region ? `, ${job.region}` : ''}
-                      {job.country ? `, ${job.country}` : ''}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2 mb-4">
-                  <p className="text-gray-600 leading-relaxed line-clamp-3">{job.description}</p>
-                  <p className="text-sm text-gray-500 flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Posted {new Date(job.publishedAt).toLocaleDateString()}
-                  </p>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <a
-                    href={job.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-[#4f3ff0] hover:bg-[#3f2fd0] text-white font-medium px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg flex items-center group"
-                  >
-                    Apply Now
-                    <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </a>
-                  <button className="text-gray-400 hover:text-red-500 transition-all duration-200 transform hover:scale-110">
-                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+              <JobCard 
+                key={job.id || `job-${index}`} 
+                job={job} 
+                index={index} 
+              />
             ))}
         </div>
 
