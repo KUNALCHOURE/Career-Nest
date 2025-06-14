@@ -344,4 +344,22 @@ const fetchAndStoreJobs = asynchandler(async (req, res) => {
   }
 });
 
-export { getalljob, fetchAndStoreJobs };
+const getJobById = asynchandler(async (req, res) => {
+  const { jobId } = req.params;
+
+  if (!jobId) {
+    throw new ApiError(400, "Job ID is required");
+  }
+
+  const job = await Job.findById(jobId);
+
+  if (!job) {
+    throw new ApiError(404, "Job not found");
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, job, "Job fetched successfully")
+  );
+});
+
+export { getalljob, fetchAndStoreJobs, getJobById };
