@@ -3,6 +3,7 @@ import { upload } from "../middleware/multermiddlewaare.js";
 import { verifyJWT } from "../middleware/authmiddleware.js";
 import {
     addResume,
+    analyzewithjd,
     analyzewithoutjd,
     deleteResume,
     extractdata,
@@ -17,6 +18,6 @@ router.delete("/delete", deleteResume);
 router.get("/get", getResume);
 router.patch("/update-status", updateResumeStatus);
 router.post("/analyze-resume-witoutJD",analyzewithoutjd);
-router.post("/analyze-resume-withJD",analyzewithoutjd);
+router.post("/analyze-resume-withJD",analyzewithjd);
 router.post("/extract-data",upload.single("resume"),extractdata)
 export default router;

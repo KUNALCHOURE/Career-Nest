@@ -7,6 +7,7 @@ import openai from "../utils/ai.js";
 
 import fs from "fs";
 import PDFTextExtractor from "../utils/pdfParser.js";
+import { text } from "stream/consumers";
 
 const addResume = asyncHandler(async (req, res) => {
     console.log("adding");
@@ -408,7 +409,9 @@ ${finaltext}
 
 const analyzewithjd = asyncHandler(async(req, res) => {
     const { resumeText, jobDescription } = req.body;
-    
+    console.log(resumeText,text);
+    const finaltext=resumeText.text;
+    console.log(jobDescription);
     if (!resumeText || !jobDescription) {
         throw new ApiError(400, "Resume text and job description are required");
     }
@@ -593,7 +596,7 @@ const analyzewithjd = asyncHandler(async(req, res) => {
 
 Resume Text:
 """
-${resumeText}
+${finaltext}
 """
 
 Job Description Text:
@@ -607,6 +610,7 @@ ${jobDescription}
         });
 
         const analysisResult = JSON.parse(response.choices[0].message.content);
+        console.log(analysisResult);
         res.json(new ApiResponse(200, analysisResult, "Resume analyzed against Job Description successfully"));
     } catch (error) {
         console.error("Error analyzing resume with JD:", error);
