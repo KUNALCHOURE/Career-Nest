@@ -47,7 +47,7 @@ const Navbar = () => {
             <div className="bg-indigo-600 w-10 h-10 rounded-lg flex items-center justify-center">
               <i className="fas fa-briefcase text-white text-lg"></i>
             </div>
-            <span className="text-xl lg:text-2xl font-bold text-gray-900">Job-Board</span>
+            <span className="text-xl lg:text-2xl font-bold text-gray-900">CareerNest</span>
           </div>
 
           {/* Desktop Navigation */}
