@@ -27,7 +27,7 @@ const Navbar = () => {
       const response = await api.post('/user/logout');
       if (response.data.success) {
         await logout();
-        navigate('/login');
+    navigate('/login');
       }
     } catch (error) {
       console.error('Logout failed:', error);
@@ -121,15 +121,15 @@ const Navbar = () => {
                 <Link 
                   to="/jobs" 
                   className="block px-3 py-2 text-gray-600 hover:text-indigo-600"
-                  onClick={() => setIsMenuOpen(false)}
-                >
+              onClick={() => setIsMenuOpen(false)}
+            >
                   Find Jobs
                 </Link>
                 <Link 
                   to="/Resume-analyzer" 
                   className="block px-3 py-2 text-gray-600 hover:text-indigo-600"
-                  onClick={() => setIsMenuOpen(false)}
-                >
+              onClick={() => setIsMenuOpen(false)}
+            >
                   Resume Analyzer
                 </Link>
                 <Link 
