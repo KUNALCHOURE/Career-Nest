@@ -116,126 +116,77 @@ const getResume = asyncHandler(async (req, res) => {
 });
 
 const extractdata = asyncHandler(async (req, res) => {
-    let filePath = null;
-    
-    try {
-        // Validate file upload
-        if (!req.file) {
-            throw new ApiError(400, "No file uploaded. Please upload a resume file.");
-        }
-
-        filePath = req.file.path;
-        
-        // Validate file type
-        const allowedMimeTypes = [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ];
-        
-        if (!allowedMimeTypes.includes(req.file.mimetype)) {
-            throw new ApiError(400, "Invalid file type. Only PDF, DOC, and DOCX files are supported.");
-        }
-
-        console.log(`Processing file: ${req.file.originalname} at ${filePath}`);
-
-        let extractedData;
-        const fileBuffer = fs.readFileSync(filePath);
-
-        // Handle different file types
-        if (req.file.mimetype === 'application/pdf') {
-            extractedData = await PDFTextExtractor.extractText(fileBuffer);
-        } 
-        else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-            extractedData = await PDFTextExtractor.extractDOCX(fileBuffer);
-        }
-        else if (req.file.mimetype === 'application/msword') {
-            throw new ApiError(422, "Legacy DOC format is not supported. Please convert to PDF or DOCX format.");
-        }
-
-        // Validate extracted content
-        if (!extractedData || !extractedData.cleanedText || extractedData.cleanedText.trim().length < 10) {
-            throw new ApiError(422, "Unable to extract readable text from the file. Please ensure the document contains selectable text.");
-        }
-
-        // Format for AI analysis
-        const aiFormattedData = PDFTextExtractor.formatForAI(extractedData);
-
-        // Calculate text statistics
-        const words = extractedData.cleanedText.split(/\s+/).filter(word => word.length > 0);
-        const textStats = {
-            characterCount: extractedData.cleanedText.length,
-            wordCount: words.length,
-            lineCount: extractedData.cleanedText.split('\n').length,
-            pageCount: extractedData.metadata.pages || 1
-        };
-
-        return res
-            .status(200)
-            .json(new ApiResponse(
-                200,
-                {
-                    extraction: {
-                        success: true,
-                        extractedAt: new Date().toISOString(),
-                        stats: textStats
-                    },
-                    content: {
-                        text: extractedData.cleanedText,
-                        preview: extractedData.cleanedText.substring(0, 300) + '...'
-                    },
-                    aiPayload: {
-                        prompt: aiFormattedData.aiPrompt,
-                        context: aiFormattedData.context,
-                        readyForAnalysis: true
-                    }
-                },
-                `File processed successfully. Extracted ${textStats.wordCount} words from ${textStats.pageCount} pages.`
-            ));
-
-    } catch (error) {
-        console.error('Resume processing error:', error);
-
-        // Clean up uploaded file on error
-        if (filePath && fs.existsSync(filePath)) {
-            try {
-                fs.unlinkSync(filePath);
-                console.log(`Cleaned up file: ${filePath}`);
-            } catch (cleanupError) {
-                console.error('Failed to cleanup file:', cleanupError);
-            }
-        }
-
-        // Handle specific error types
-        if (error instanceof ApiError) {
-            return res
-                .status(error.statuscode)
-                .json(error);
-        }
-
-        // Handle file system errors
-        if (error.code === 'ENOENT') {
-            return res
-                .status(404)
-                .json(new ApiError(404, "Uploaded file not found."));
-        }
-
-        // Handle PDF parsing errors
-        if (error.message.includes('Invalid PDF')) {
-            return res
-                .status(422)
-                .json(new ApiError(422, "Invalid or corrupted PDF file."));
-        }
-
-        // Generic error handling
-        return res
-            .status(500)
-            .json(new ApiError(
-                500, 
-                "Failed to process resume. Please try again.",
-                [error.message]
-            ));
+    if (!req.file) {
+        throw new ApiError(400, "No file uploaded. Please upload a resume file.");
     }
+
+    // Validate file type
+    const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        throw new ApiError(400, "Invalid file type. Only PDF, DOC, and DOCX files are supported.");
+    }
+
+    console.log(`Processing file: ${req.file.originalname}`);
+
+    let extractedData;
+    const fileBuffer = req.file.buffer;
+
+    // Handle different file types
+    if (req.file.mimetype === 'application/pdf') {
+        extractedData = await PDFTextExtractor.extractText(fileBuffer);
+    } 
+    else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        extractedData = await PDFTextExtractor.extractDOCX(fileBuffer);
+    }
+    else if (req.file.mimetype === 'application/msword') {
+        throw new ApiError(422, "Legacy DOC format is not supported. Please convert to PDF or DOCX format.");
+    }
+
+    // Validate extracted content
+    if (!extractedData || !extractedData.cleanedText || extractedData.cleanedText.trim().length < 10) {
+        throw new ApiError(422, "Unable to extract readable text from the file. Please ensure the document contains selectable text.");
+    }
+
+    // Format for AI analysis
+    const aiFormattedData = PDFTextExtractor.formatForAI(extractedData);
+
+    // Calculate text statistics
+    const words = extractedData.cleanedText.split(/\s+/).filter(word => word.length > 0);
+    const textStats = {
+        characterCount: extractedData.cleanedText.length,
+        wordCount: words.length,
+        lineCount: extractedData.cleanedText.split('\n').length,
+        pageCount: extractedData.metadata.pages || 1
+    };
+
+    return res
+        .status(200)
+        .json(new ApiResponse(
+            200,
+            {
+                extraction: {
+                    success: true,
+                    extractedAt: new Date().toISOString(),
+                    stats: textStats
+                },
+                content: {
+                    text: extractedData.cleanedText,
+                    preview: extractedData.cleanedText.substring(0, 300) + '...'
+                },
+                aiPayload: {
+                    prompt: aiFormattedData.aiPrompt,
+                    context: aiFormattedData.context,
+                    readyForAnalysis: true
+                }
+            },
+            `File processed successfully. Extracted ${textStats.wordCount} words from ${textStats.pageCount} pages.`
+        ));
+
 });
 
 const getResumes = asyncHandler(async (req, res) => {
@@ -664,8 +615,8 @@ ${jobDescription}
 });
 
 export {
-  addResume,
-  deleteResume,
+    addResume,
+    deleteResume,
   getResume,
   updateResumeStatus,
   analyzewithoutjd,
