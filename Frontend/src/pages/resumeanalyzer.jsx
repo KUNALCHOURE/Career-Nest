@@ -109,23 +109,31 @@ export default function Resumeanalyzer() {
       console.log("Text extracted successfully");
 
       // Then analyze based on mode
-      let analysisResponse;
       if (analysisMode === 'withJD') {
-        analysisResponse = await api.post('/resume/analyze-resume-withJD', {
+console.log("withjd")
+        const analysisResponseWithJD = await api.post('/resume/analyze-resume-withJD', {
           resumeText: extractedText,
           jobDescription
         });
-      } else {
-        analysisResponse = await api.post('/resume/analyze-resume-witoutJD', {
+        if (analysisResponseWithJD.status === 200) {
+          console.log(analysisResponseWithJD.data.data);
+          setAnalysisResults(analysisResponseWithJD.data.data);
+        } else {
+          throw new Error('Failed to analyze resume with JD');
+        }
+      } else if (analysisMode === 'withoutJD') {
+        console.log("in withoutjd")
+        const analysisResponseWithoutJD = await api.post('/resume/analyze-resume-witoutJD', {
           resumeText: extractedText
         });
-      }
-      console.log(analysisResponse);
-
-      if (analysisResponse.status === 200) {
-        setAnalysisResults(analysisResponse.data.data);
+        if (analysisResponseWithoutJD.status === 200) {
+          console.log(analysisResponseWithoutJD.data.data);
+          setAnalysisResults(analysisResponseWithoutJD.data.data);
+        } else {
+          throw new Error('Failed to analyze resume without JD');
+        }
       } else {
-        throw new Error('Failed to analyze resume');
+        throw new Error("Invalid analysis mode");
       }
 
     } catch (err) {
