@@ -7,7 +7,7 @@ import Resumeanalyzer from './pages/resumeanalyzer.jsx'
 import { AuthProvider, useAuth } from './context/authcontext.jsx'
 import Jobpage from './pages/Jobpage.jsx'
 import Profile from './pages/profile.jsx'
-import Landing from './components/Landing.jsx'
+import Landing from './pages/Landing.jsx';
 import JobDetails from './pages/JobDetails'
 
 function PrivateRoute({ children }) {
