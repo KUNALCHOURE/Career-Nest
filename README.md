@@ -127,13 +127,14 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Screenshots
 
-
---Home page
+ Home page
 ![Image](https://github.com/user-attachments/assets/ecd86ddb-663e-4a38-9faa-e15c826ff8d9)
-
--- JOB PAGE
+<br><br>
+ Job Page
+ 
 ![Image](https://github.com/user-attachments/assets/83d06389-28b5-40d9-b4ca-9a51f38f7798)
 
+ <br><br>
 
--- Resume Analysis
+ Resume Analysis Page
 ![Image](https://github.com/user-attachments/assets/eafd208e-612b-4d63-aa2c-3c271e9c948a)
