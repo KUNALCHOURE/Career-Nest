@@ -43,7 +43,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 hover:cursor-pointer" onClick={()=>navigate('/')} >
             <div className="bg-indigo-600 w-10 h-10 rounded-lg flex items-center justify-center">
               <i className="fas fa-briefcase text-white text-lg"></i>
             </div>
