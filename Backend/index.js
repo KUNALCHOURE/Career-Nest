@@ -2,7 +2,7 @@ dotenv.config();
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import ApiError from "./utils/Apierror.js";
+import ApiError from "./utils/ApiError.js";
 import cookieParser from "cookie-parser";
 import userRoutes from './routes/user.routes.js'
 import cors from 'cors'

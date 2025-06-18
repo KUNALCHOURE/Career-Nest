@@ -1,8 +1,9 @@
+import ApiError from "../utils/ApiError.js";
 import User from "../models/user.models.js";
-import ApiError from "../utils/Apierror.js";
+import Resume from "../models/resume.model.js";
+import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asynchandler.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
-import ApiResponse from "../utils/Apiresponse.js";
 import openai from "../utils/ai.js";
 
 import fs from "fs";
