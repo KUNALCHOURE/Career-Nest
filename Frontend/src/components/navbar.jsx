@@ -27,7 +27,8 @@ const Navbar = () => {
       const response = await api.post('/user/logout');
       if (response.data.success) {
         await logout();
-    navigate('/login');
+        // Force a hard navigation to login page
+        window.location.href = '/login';
       }
     } catch (error) {
       console.error('Logout failed:', error);
