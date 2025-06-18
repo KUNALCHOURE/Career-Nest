@@ -9,7 +9,7 @@ import {
     extractdata,
     getResume,
     updateResumeStatus
-} from "../controlllers/resume.controllers.js";
+} from "../controllers/resume.controllers.js";
 
 const router = Router();
 router.use(verifyJWT);
