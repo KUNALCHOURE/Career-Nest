@@ -6,7 +6,6 @@ import asyncHandler from "../utils/asynchandler.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import openai from "../utils/ai.js";
 
-import fs from "fs";
 import PDFTextExtractor from "../utils/pdfParser.js";
 import { text } from "stream/consumers";
 
@@ -627,5 +626,5 @@ export {
   analyzewithoutjd,
   analyzewithjd,
   extractdata,
-  getResumes
+  // getResumes
 };
