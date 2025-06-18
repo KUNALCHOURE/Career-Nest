@@ -15,7 +15,7 @@ app.use(express.urlencoded({extended:true,limit:"16kb"}))
 app.use(express.static("public"))
 app.use(cookieParser());
 app.use(cors({
-  origin:["http://localhost:5173"],
+  origin:["http://localhost:5173","https://career-nest-lovat.vercel.app"],
   credentials:true,
  
 }))

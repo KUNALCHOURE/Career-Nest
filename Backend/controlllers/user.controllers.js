@@ -116,9 +116,11 @@ const login = asynchandler(async (req, res) => {
 console.log(loggedinuser)
     const options = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true, // Always use secure in production
         path: "/",
-        sameSite: 'Lax', // Added sameSite for better security and cookie handling
+        sameSite: 'None', // Changed to None to allow cross-site cookies
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        domain: process.env.COOKIE_DOMAIN || undefined // Add domain if specified in env
     };
 
     return res
@@ -148,8 +150,11 @@ const logoutuser = asynchandler(async (req, res) => {
 
     const options = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "Lax", // Consistent sameSite attribute
+        secure: true,
+        path: "/",
+        sameSite: 'None',
+        maxAge: 24 * 60 * 60 * 1000,
+        domain: process.env.COOKIE_DOMAIN || undefined
     };
 
     return res
