@@ -1,6 +1,6 @@
 import ApiError from "../utils/ApiError.js";
 import User from "../models/user.models.js";
-import Resume from "../models/resume.model.js";
+//import Resume from "../models/resume.model.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asynchandler.js";
 import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
@@ -191,13 +191,13 @@ const extractdata = asyncHandler(async (req, res) => {
 
 });
 
-const getResumes = asyncHandler(async (req, res) => {
-    const resumes = await Resume.find({ user: req.user._id });
+// const getResumes = asyncHandler(async (req, res) => {
+//     const resumes = await Resume.find({ user: req.user._id });
     
-    return res
-        .status(200)
-        .json(new ApiResponse(200, resumes, "Resumes fetched successfully"));
-});
+//     return res
+//         .status(200)
+//         .json(new ApiResponse(200, resumes, "Resumes fetched successfully"));
+// });
 
 const updateResumeStatus = asyncHandler(async (req, res) => {
     const userId = req.user._id;
