@@ -24,12 +24,12 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await api.post('/user/logout');
-      if (response.data.success) {
-        await logout();
-        // Force a hard navigation to login page
-        window.location.href = '/login';
-      }
+      const response = await logout();
+      // if (response.data.success) {
+      //   await logout();
+      //   // Force a hard navigation to login page
+      //  navigate("/login")
+      // }
     } catch (error) {
       console.error('Logout failed:', error);
     }

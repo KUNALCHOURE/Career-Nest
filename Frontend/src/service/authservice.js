@@ -42,7 +42,7 @@ const authService = {
     logout: async () => {
         try {
             console.log("hello");
-            const response = await api.get('/user/logout');
+            const response = await api.post('/user/logout',{ withCredentials: true });
             return response;
         } catch (error) {
             console.error("API Error:", error);

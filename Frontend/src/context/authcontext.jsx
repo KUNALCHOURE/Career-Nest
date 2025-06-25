@@ -15,13 +15,21 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const response = await api.get("/user/current-user", { withCredentials: true }); // ✅ Ensure cookies are sent
+                const userData = localStorage.getItem("user");
+                const isLoggedIn = localStorage.getItem("isLoggedIn");
+
+                if (userData) {
+                    console.log(userData);
+    setUser(JSON.parse(userData));
+  }  else if(isLoggedIn){
+                const response = await api.get("/user/current-user", { withCredentials: true }); 
                 console.log("Auth Check API Response:", response);
     
                 if (response.data?.data?.userobject) {
                     console.log(response.data.data.userobject);
                     setUser(response.data.data.userobject);
                 }
+            }
             } catch (error) {
                 console.error("Auth check failed:", error);
                 setUser(null); // ✅ Clear user if session expired
@@ -32,6 +40,25 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
+    useEffect(() => {
+        const warmup = async () => {
+          const hasPinged = sessionStorage.getItem("pinged");
+      
+          if (!hasPinged) {
+            try {
+              await api.get("/ping");
+              console.log("Backend warmed up");
+              sessionStorage.setItem("pinged", "true");
+            } catch (err) {
+              console.log("Backend still sleeping...");
+            }
+          }
+        };
+      
+        warmup();
+      }, []);
+      
+
     const login = async (credentials) => {
         try {
             const response = await authService.login(credentials);
@@ -40,10 +67,14 @@ export const AuthProvider = ({ children }) => {
             if (!response || !response.data) {
                 throw new Error("Invalid response from the server");
             }
-
+            localStorage.setItem("user", JSON.stringify(response.data));
+localStorage.setItem("isLoggedIn", "true");
             setUser(response.data);
-            toast.success('Welcome back!');
+          
+                toast.success('Welcome back!');
             navigate("/jobs");
+            
+            
         } catch (error) {
             toast.error(error.message || 'Login failed. Please try again.');
             throw error;
@@ -61,9 +92,17 @@ export const AuthProvider = ({ children }) => {
                 throw new Error("Invalid response from the server");
             }
 
-            setUser(response.data);
-            toast.success('Registration successful!');
-            navigate("/jobs");
+            const token = response.data.token;
+        const user = response.data.userobject;
+
+        // ✅ Save token and user data
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("isLoggedIn", "true");
+
+        setUser(user);
+        toast.success('Registration successful!');
+        navigate("/jobs");
         } catch (error) {
             console.error("Error during registration:", error);
             const errorMessage = error?.message || error?.response?.data?.message || "Signup failed. Please try again.";
@@ -76,8 +115,11 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await authService.logout();
             if (response.status === 200) {
+                localStorage.removeItem("user");
+                localStorage.removeItem("isLoggedIn");
                 setUser(null);
                 toast.success('Logged out successfully');
+                console.log("loggin out");
                 navigate('/login');
             }
         } catch (error) {
