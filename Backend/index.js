@@ -48,7 +48,9 @@ const connectDB = async() => {
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/jobs", jobRoutes);
 app.use("/api/v1/resume", resumeRoutes);
-
+app.get("/api/v1/ping", (req, res) => {
+  res.status(200).send("pong");
+});
 // Error handling middleware
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;

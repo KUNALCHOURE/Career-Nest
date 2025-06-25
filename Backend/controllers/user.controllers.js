@@ -135,7 +135,7 @@ console.log(loggedinuser)
 
 const logoutuser = asynchandler(async (req, res) => {
     const userId = req.user?._id;
-
+     console.log(req.user);
     if (!userId) {
         // This scenario should ideally be caught by middleware before reaching here,
         // but it's good to have a robust check.
