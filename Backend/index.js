@@ -19,7 +19,8 @@ app.use(cookieParser());
 // CORS configuration
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://career-nest-lovat.vercel.app"
+  "https://career-nest-lovat.vercel.app",
+  "https://careernests.netlify.app"
 ];
 
 app.use(cors({
