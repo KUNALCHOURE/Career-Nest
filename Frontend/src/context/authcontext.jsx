@@ -114,6 +114,7 @@ localStorage.setItem("isLoggedIn", "true");
     const logout = async () => {
         try {
             const response = await authService.logout();
+            console.log(response.status);
             if (response.status === 200) {
                 localStorage.removeItem("user");
                 localStorage.removeItem("isLoggedIn");

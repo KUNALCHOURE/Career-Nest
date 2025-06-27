@@ -24,12 +24,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await logout();
-      // if (response.data.success) {
-      //   await logout();
-      //   // Force a hard navigation to login page
-      //  navigate("/login")
-      // }
+      await logout(); // Only use the context's logout function
     } catch (error) {
       console.error('Logout failed:', error);
     }
