@@ -67,9 +67,10 @@ export const AuthProvider = ({ children }) => {
             if (!response || !response.data) {
                 throw new Error("Invalid response from the server");
             }
-            localStorage.setItem("user", JSON.stringify(response.data));
+            localStorage.setItem("user", JSON.stringify(response.data.loggedinuser
+));
 localStorage.setItem("isLoggedIn", "true");
-            setUser(response.data);
+            setUser(response.data.loggedinuser);
           
                 toast.success('Welcome back!');
             navigate("/jobs");

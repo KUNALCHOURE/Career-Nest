@@ -82,6 +82,7 @@ const Navbar = () => {
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
                     <span className="text-indigo-600 font-medium">
+                   
                       {user.username ? user.username[0].toUpperCase() : 'U'}
                     </span>
                   </div>
