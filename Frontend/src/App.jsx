@@ -9,6 +9,7 @@ import Jobpage from './pages/Jobpage.jsx'
 import Profile from './pages/profile.jsx'
 import Landing from './pages/Landing.jsx';
 import JobDetails from './pages/JobDetails'
+import ForgetPassword from './pages/forgetpassword.jsx';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -25,6 +26,7 @@ function App() {
           <Route path='/login' element={<Login />} />
           <Route path='/Register' element={<Register />} />
           <Route path='/' element={<Landing />} />
+          <Route path='/forget-password' element={<ForgetPassword/>}></Route>
 
           {/* Protected routes - accessible only after login */}
           <Route path='/jobs' element={<PrivateRoute><Jobpage /></PrivateRoute>} />

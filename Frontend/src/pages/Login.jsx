@@ -45,13 +45,7 @@ const Login = () => {
             <p className="text-lg text-indigo-100 mb-8 text-center">
               Find your dream job and take the next step in your career journey
             </p>
-            <div className="w-full max-w-xs">
-              <img 
-                src="https://illustrations.popsy.co/white/coding.svg" 
-                alt="Login Illustration"
-                className="w-full h-auto"
-              />
-            </div>
+            
           </div>
         </div>
 
@@ -136,9 +130,9 @@ const Login = () => {
               
 
                 <div className="text-sm">
-                  <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+                  <Link to="/forget-password" className="font-medium text-indigo-600 hover:text-indigo-500">
                     Forgot your password?
-                  </a>
+                  </Link>
                 </div>
               </div>
 

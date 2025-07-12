@@ -12,224 +12,56 @@ const getalljob = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const andConditions = [];
-    
-    // Enhanced text search with better handling of software development queries
-    if (req.query.q) {
-      const searchTerms = req.query.q.toLowerCase().split(' ').filter(term => term.length > 0);
-      
-      // Common variations and synonyms for software development
-      const roleVariations = {
-        'software': ['software', 'sw', 's/w', 'soft'],
-        'development': ['development', 'dev', 'developing', 'developer'],
-        'engineer': ['engineer', 'engineering', 'eng', 'engg'],
-        'programming': ['programming', 'programmer', 'program', 'prog'],
-        'developer': ['developer', 'dev', 'developing', 'development'],
-        'fullstack': ['fullstack', 'full-stack', 'full stack', 'full stack developer'],
-        'frontend': ['frontend', 'front-end', 'front end', 'front end developer'],
-        'backend': ['backend', 'back-end', 'back end', 'back end developer'],
-        'web': ['web', 'web developer', 'web development'],
-        'mobile': ['mobile', 'mobile developer', 'mobile development'],
-        'application': ['application', 'app', 'applications', 'apps']
-      };
 
-      // Generate search conditions for each term
-      const searchConditions = searchTerms.map(term => {
-        const variations = roleVariations[term] || [term];
-        return {
-          $or: [
-            { title: { $regex: variations.join('|'), $options: 'i' } },
-            { description: { $regex: variations.join('|'), $options: 'i' } },
-            { qualifications: { $regex: variations.join('|'), $options: 'i' } },
-            { essentialFunctions: { $regex: variations.join('|'), $options: 'i' } },
-            { preferredSkills: { $regex: variations.join('|'), $options: 'i' } },
-            { hiringOrganizationName: { $regex: variations.join('|'), $options: 'i' } }
-          ]
-        };
-      });
+    // ✅ Combined location filtering
+    if (req.query.city && req.query.region && req.query.country) {
+      const locationString = `${req.query.city} ${req.query.region} ${req.query.country}`.trim();
 
-      andConditions.push({ $and: searchConditions });
-    }
-
-    // Enhanced location filters with hierarchical matching
-    if (req.query.city || req.query.region || req.query.country) {
-      const locationConditions = [];
-      
-      if (req.query.city) {
-        const cities = req.query.city.split(',').map(city => city.trim());
-        locationConditions.push({
-          $or: cities.map(city => ({
-            city: { $regex: city, $options: 'i' }
-          }))
-        });
-      }
-
-      if (req.query.region) {
-        const regions = req.query.region.split(',').map(region => region.trim());
-        locationConditions.push({
-          $or: regions.map(region => ({
-            region: { $regex: region, $options: 'i' }
-          }))
-        });
-      }
-
-      if (req.query.country) {
-        const countries = req.query.country.split(',').map(country => country.trim());
-        locationConditions.push({
-          $or: countries.map(country => ({
-            country: { $regex: country, $options: 'i' }
-          }))
-        });
-      }
-
-      if (locationConditions.length > 0) {
-        andConditions.push({ $and: locationConditions });
-      }
-    }
-
-    // Enhanced employment type filter
-    if (req.query.employmentType) {
-      const types = req.query.employmentType.split(',').map(type => type.trim());
-      const employmentTypes = types.map(type => {
-        switch(type.toLowerCase()) {
-          case 'fulltime':
-          case 'full-time':
-            return 'Full-time';
-          case 'parttime':
-          case 'part-time':
-            return 'Part-time';
-          case 'contract':
-            return 'Contract';
-          case 'internship':
-            return 'Internship';
-          default:
-            return type;
-        }
-      });
-      andConditions.push({ employmentType: { $in: employmentTypes } });
-    }
-
-    // Workplace type filter
-    if (req.query.workplaceType) {
-      const types = req.query.workplaceType.split(',').map(type => type.trim());
       andConditions.push({
-        $or: types.map(type => ({
-          workplaceType: { $regex: type, $options: 'i' }
-        }))
+        $or: [
+          { city: { $regex: locationString, $options: 'i' } },
+          { region: { $regex: locationString, $options: 'i' } },
+          { country: { $regex: locationString, $options: 'i' } }
+        ]
       });
     }
 
-    // Enhanced salary range filter
-    if (req.query.minSalary || req.query.maxSalary || req.query.salaryCurrency) {
-      const salaryFilter = {};
-      
-      if (req.query.minSalary) {
-        const minSalary = parseInt(req.query.minSalary.replace(/[^0-9]/g, ''));
-        if (!isNaN(minSalary)) {
-          salaryFilter.$gte = minSalary;
-        }
-      }
-      
-      if (req.query.maxSalary) {
-        const maxSalary = parseInt(req.query.maxSalary.replace(/[^0-9]/g, ''));
-        if (!isNaN(maxSalary)) {
-          salaryFilter.$lte = maxSalary;
-        }
-      }
+    // ✅ Job type filtering based on q
+    if (req.query.q && req.query.q.trim() !== '') {
+      const jobQuery = req.query.q.trim();
 
-      if (req.query.salaryCurrency) {
-        salaryFilter.currency = req.query.salaryCurrency.toUpperCase();
-      }
-
-      if (Object.keys(salaryFilter).length > 0) {
-        andConditions.push({ salary: salaryFilter });
-      }
-    }
-
-    // Experience level filter
-    if (req.query.experienceLevel) {
-      const levels = req.query.experienceLevel.split(',').map(level => level.trim());
       andConditions.push({
-        $or: levels.map(level => ({
-          experienceLevel: { $regex: level, $options: 'i' }
-        }))
+        $or: [
+          { title: { $regex: jobQuery, $options: 'i' } },
+          { description: { $regex: jobQuery, $options: 'i' } },
+          { qualifications: { $regex: jobQuery, $options: 'i' } },
+          { preferredSkills: { $regex: jobQuery, $options: 'i' } }
+        ]
       });
     }
 
-    // Education level filter
-    if (req.query.educationLevel) {
-      const levels = req.query.educationLevel.split(',').map(level => level.trim());
-      andConditions.push({
-        $or: levels.map(level => ({
-          educationLevel: { $regex: level, $options: 'i' }
-        }))
-      });
-    }
-
-    // Industry sector filter
-    if (req.query.industry) {
-      const industries = req.query.industry.split(',').map(industry => industry.trim());
-      andConditions.push({
-        $or: industries.map(industry => ({
-          industry: { $regex: industry, $options: 'i' }
-        }))
-      });
-    }
-
-    // Company filter
-    if (req.query.company) {
-      const companies = req.query.company.split(',').map(company => company.trim());
-      andConditions.push({
-        $or: companies.map(company => ({
-          hiringOrganizationName: { $regex: company, $options: 'i' }
-        }))
-      });
-    }
-
-    // Date posted filter
-    if (req.query.postedWithin) {
-      const days = parseInt(req.query.postedWithin.replace(/[^0-9]/g, ''));
-      if (!isNaN(days)) {
-        const dateThreshold = new Date();
-        dateThreshold.setDate(dateThreshold.getDate() - days);
-        andConditions.push({ publishedAt: { $gte: dateThreshold } });
-      }
-    }
-
-    // Combine all conditions with $and
+    // ✅ Final filter
     const finalFilter = andConditions.length > 0 ? { $and: andConditions } : {};
 
-    // Enhanced sorting options
-    const sortOptions = {
-      salary: { salary: 1 },
-      publishedAt: { publishedAt: -1 },
-      experience: { 'experienceRequired.min': 1 },
-      relevance: { score: { $meta: "textScore" } }
-    };
+    // ✅ Sorting (latest jobs by default)
+    const sort = { publishedAt: -1 };
 
-    const sortBy = req.query.sortBy || 'relevance';
-    const order = req.query.order === 'asc' ? 1 : -1;
-    const sort = sortOptions[sortBy] 
-      ? { ...sortOptions[sortBy], [Object.keys(sortOptions[sortBy])[0]]: order } 
-      : sortOptions.relevance;
-
-    // Get total count for pagination
+    // ✅ Count and fetch
     const totalJobs = await Job.countDocuments(finalFilter);
     const totalPages = Math.ceil(totalJobs / limit);
 
-    // Get jobs with filters, sorting, and pagination
     const jobs = await Job.find(finalFilter)
       .sort(sort)
       .skip(skip)
       .limit(limit);
 
-    // Prepare facets for aggregation
+    // ✅ Facets for frontend
     const facets = {
-      employmentTypes: await Job.distinct('employmentType', finalFilter),
-      locations: await Job.distinct('city', finalFilter),
-      companies: await Job.distinct('hiringOrganizationName', finalFilter),
-      industries: await Job.distinct('industry', finalFilter)
+      jobTitles: await Job.distinct('title', finalFilter),
+      locations: await Job.distinct('city', finalFilter)
     };
 
+    // ✅ Send response
     res.status(200).json(new ApiResponse(200, {
       jobs,
       currentPage: page,
@@ -246,6 +78,7 @@ const getalljob = async (req, res) => {
     throw new ApiError(500, "Error fetching jobs from database");
   }
 };
+
 
 const fetchAndStoreJobs = asynchandler(async (req, res) => {
   console.log('Attempting to fetch and store jobs...');

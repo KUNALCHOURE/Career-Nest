@@ -178,4 +178,36 @@ const getcurrectuser=asynchandler(async(req,res)=>{
        
     })
 
-export { register, login, logoutuser ,getcurrectuser};
+const changeCurrentUserPassword = asynchandler(async (req, res) => {
+  const { oldpassword, newpassword } = req.body;
+
+  // Check for missing fields
+  if (!oldpassword || !newpassword) {
+    throw new ApiError(400, "Old and new passwords are required.");
+  }
+
+  // Find user from request (set by auth middleware)
+  const userFind = await User.findById(req.user?._id);
+  if (!userFind) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Check if old password matches
+  const isPassCorrect = await userFind.ispasswordcorrect(oldpassword);
+  if (!isPassCorrect) {
+    throw new ApiError(400, "The old password is incorrect, please try again.");
+  }
+
+  // Set the new password
+  userFind.password = newpassword;
+
+  // Save user without triggering validators like "required"
+  await userFind.save({ validateBeforeSave: false });
+
+  return res.status(200).json(
+    new ApiResponse(200, {}, "Password changed successfully")
+  );
+});
+
+
+export { register, login, logoutuser ,getcurrectuser,changeCurrentUserPassword};
