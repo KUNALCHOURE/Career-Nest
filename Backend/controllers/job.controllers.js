@@ -94,9 +94,9 @@ const fetchAndStoreJobs = asynchandler(async (req, res) => {
         'apikey': process.env.JOB_INFO_API,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        q: "Software Developer",
-      })
+      // body: JSON.stringify({
+      //   q: "Software Developer",
+      // })
     });
 
     if (!apiResponse.ok) {
