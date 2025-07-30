@@ -181,7 +181,7 @@ export default function Resumeanalyzer() {
                   id="job-description"
                   name="job-description"
                   rows="6"
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-lg resize-none"
+                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-lg resize-none p-2"
                   placeholder="Paste the job description here..."
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
