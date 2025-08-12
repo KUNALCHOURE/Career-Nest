@@ -13,15 +13,17 @@ const getalljob = async (req, res) => {
 
     const andConditions = [];
 
-    // ✅ Combined location filtering
-    if (req.query.city && req.query.region && req.query.country) {
-      const locationString = `${req.query.city} ${req.query.region} ${req.query.country}`.trim();
+    // ✅ Corrected location filtering:
+    // This block now correctly uses only the 'city' query parameter from the frontend
+    // to search across the 'city', 'region', and 'country' fields in the database.
+    if (req.query.city) {
+      const searchTerm = req.query.city.trim(); // Use only the city query parameter as the search term
 
       andConditions.push({
         $or: [
-          { city: { $regex: locationString, $options: 'i' } },
-          { region: { $regex: locationString, $options: 'i' } },
-          { country: { $regex: locationString, $options: 'i' } }
+          { city: { $regex: searchTerm, $options: 'i' } },    // Search in city field
+          { region: { $regex: searchTerm, $options: 'i' } },  // Search in region field
+          { country: { $regex: searchTerm, $options: 'i' } }  // Search in country field
         ]
       });
     }
@@ -95,7 +97,7 @@ const fetchAndStoreJobs = asynchandler(async (req, res) => {
         'Content-Type': 'application/json'
       },
       // body: JSON.stringify({
-      //   q: "Software Developer",
+      //   q: "Software Developer",
       // })
     });
 
