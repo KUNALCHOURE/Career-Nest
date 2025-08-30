@@ -63,11 +63,10 @@ export default function JobDetails() {
     const flushList = () => {
       if (currentList.length > 0) {
         elements.push(
-          <ul className="space-y-2 mb-4" key={`ul-${elements.length}`}>
+          <ul className="list-disc list-inside space-y-1 mb-4 text-gray-700" key={`ul-${elements.length}`}>
             {currentList.map((item, idx) => (
-              <li key={`li-${elements.length}-${idx}`} className="flex items-start">
-                <span className="flex-shrink-0 w-2 h-2 mt-2 mr-2 rounded-full bg-[#4f3ff0]"></span>
-                <span className="ml-2 text-gray-700 leading-relaxed whitespace-pre-wrap">{item}</span>
+              <li key={`li-${elements.length}-${idx}`} className="leading-relaxed">
+                <span className="whitespace-pre-wrap">{item}</span>
               </li>
             ))}
           </ul>
@@ -78,75 +77,64 @@ export default function JobDetails() {
     };
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]; // Keep original line for better formatting, will trim for checks
+      const line = lines[i];
       const trimmedLine = line.trim();
 
       if (trimmedLine.startsWith('*')) {
-        flushList(); // Flush previous list if any
+        flushList();
         currentList.push(trimmedLine.substring(1).trim());
         inList = true;
-      } else if (inList && trimmedLine !== '') {
-        // If we are in a list and the current line is not empty, it's a continuation
-        currentList[currentList.length - 1] += '\n' + line; // Append to last item with a newline and original line to preserve indentation
       } else {
-        flushList(); // Flush any accumulated list
+        flushList();
 
         if (trimmedLine === '') {
-          // Only add a paragraph for a truly empty line if it's not within a list context
-          // This prevents excessive spacing in parsed description
-          if (!inList && (i === 0 || lines[i - 1].trim() !== '')) {
-            elements.push(<p key={`p-empty-${i}`} className="mb-1"></p>); // Add an empty paragraph for visual gap
-          }
-          continue; 
+          continue;
         }
 
-        // Heuristic for identifying headings:
-        // 1. Ends with a colon (e.g., "Travel Requirements:")
-        // 2. Or, is followed by at least one empty line, AND then a bullet point list
         let isHeading = false;
         if (trimmedLine.endsWith(':') && trimmedLine.length < 100) {
-            isHeading = true;
+          isHeading = true;
         } else {
-            const nextNonEmptyLineIdx = lines.slice(i + 1).findIndex(l => l.trim() !== '');
-            if (nextNonEmptyLineIdx !== -1) {
-                const actualNextLineIdx = i + 1 + nextNonEmptyLineIdx;
-                if (actualNextLineIdx < lines.length && lines[actualNextLineIdx].trim().startsWith('*')) {
-                    if (nextNonEmptyLineIdx > 0) { // Check if there's a gap (one or more empty lines)
-                        isHeading = true;
-                    }
-                }
+          const nextNonEmptyLineIdx = lines.slice(i + 1).findIndex(l => l.trim() !== '');
+          if (nextNonEmptyLineIdx !== -1) {
+            const actualNextLineIdx = i + 1 + nextNonEmptyLineIdx;
+            if (actualNextLineIdx < lines.length && lines[actualNextLineIdx].trim().startsWith('*')) {
+              if (nextNonEmptyLineIdx > 0) {
+                isHeading = true;
+              }
             }
+          }
         }
 
         if (isHeading) {
-          elements.push(<h3 key={`h-${i}`} className="text-xl font-semibold text-gray-800 mt-4 mb-2">{trimmedLine}</h3>);
+          elements.push(<h3 key={`h-${i}`} className="text-xl font-semibold text-gray-900 mt-6 mb-2">{trimmedLine}</h3>);
         } else {
-          elements.push(<p key={`p-${i}`} className="text-gray-700 leading-relaxed mb-1">{trimmedLine}</p>);
+          elements.push(<span key={`p-${i}`} className="text-gray-700 leading-relaxed mb-4">{line}</span>);
         }
-        inList = false; // Reset inList when a non-list item is encountered
+        inList = false;
       }
     }
 
-    flushList(); // Flush any remaining list at the end
+    flushList();
 
     return elements;
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#4f3ff0]"></div>
-        <p className="ml-4 text-xl text-gray-700">Loading Job Details...</p>
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
+        <p className="ml-4 text-lg text-gray-600">Loading Job Details...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-        <h2 className="text-3xl text-red-600 mb-4">Error</h2>
-        <p className="text-gray-700 text-lg mb-6">{error}</p>
-        <Link to="/jobs" className="bg-[#4f3ff0] hover:bg-[#3f2fd0] text-white font-medium px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-md">
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6 text-center">
+        <h2 className="text-4xl text-red-600 font-bold mb-4">Oops!</h2>
+        <p className="text-gray-700 text-xl mb-6">{error}</p>
+        <Link to="/jobs" className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg">
           Go Back to Job Listings
         </Link>
       </div>
@@ -155,10 +143,10 @@ export default function JobDetails() {
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-        <h2 className="text-3xl text-gray-700 mb-4">Job Not Found</h2>
-        <p className="text-gray-600 text-lg mb-6">The job you are looking for does not exist or has been removed.</p>
-        <Link to="/jobs" className="bg-[#4f3ff0] hover:bg-[#3f2fd0] text-white font-medium px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-md">
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6 text-center">
+        <h2 className="text-4xl text-gray-800 font-bold mb-4">Job Not Found</h2>
+        <p className="text-gray-600 text-xl mb-6">The job you are looking for does not exist or has been removed.</p>
+        <Link to="/jobs" className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg">
           Go Back to Job Listings
         </Link>
       </div>
@@ -166,100 +154,73 @@ export default function JobDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 animate-fade-in-up">
-        <Link to="/jobs" className="text-[#4f3ff0] hover:text-[#3f2fd0] flex items-center mb-6 font-medium transition-colors">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Jobs
-        </Link>
-
-        {/* Job Header */}
-        <div className="flex items-center space-x-4 mb-8">
-          {job.hiringOrganizationLogo && (
-            <img src={job.hiringOrganizationLogo} alt={job.hiringOrganizationName} className="h-16 w-16 object-contain rounded-full border border-gray-200" />
-          )}
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">{job.title}</h1>
-            <p className="text-xl text-gray-700">{job.hiringOrganizationName} | {formatLocation()}</p>
-          </div>
-        </div>
-
-        {/* Job Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
-          <h2 className="col-span-full text-2xl font-bold text-gray-800 mb-4 flex items-center">
-            <svg className="w-6 h-6 mr-2 text-[#4f3ff0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    <div className="bg-gray-100 min-h-screen py-12 px-4 sm:px-6 lg:px-8 mt-10">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        {/* Header Section */}
+        <div className="relative p-8 lg:p-12 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white">
+          <Link to="/jobs" className="absolute top-8 left-8 flex items-center text-indigo-100 hover:text-white transition-colors text-sm font-medium">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Job Overview
-          </h2>
-          {job.employmentType && (
-            <div className="flex items-center text-lg text-gray-700 bg-white p-3 rounded-lg shadow-sm">
-              <svg className="w-5 h-5 mr-2 text-[#4f3ff0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-1.272-8.455-3.355L1 9.499V4.5M4.5 9.499l7.5 7.5 7.5-7.5M4.5 4.5l7.5 7.5 7.5-7.5" />
-              </svg>
-              <span><span className="font-semibold">Type:</span> {job.employmentType}</span>
-            </div>
-          )}
-          {job.publishedAt && (
-            <div className="flex items-center text-lg text-gray-700 bg-white p-3 rounded-lg shadow-sm">
-              <svg className="w-5 h-5 mr-2 text-[#4f3ff0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span><span className="font-semibold">Posted:</span> {formatDate(job.publishedAt)}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Company Information */}
-        {job.hiringOrganizationName && (
-          <div className="mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-              <svg className="w-6 h-6 mr-2 text-[#4f3ff0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              About {job.hiringOrganizationName}
-            </h2>
-            {job.website && (
-              <p className="text-gray-700 leading-relaxed">
-                Visit their website: <a href={`https://${job.website}`} target="_blank" rel="noopener noreferrer" className="text-[#4f3ff0] hover:underline">{job.website}</a>
-              </p>
+            Back to Jobs
+          </Link>
+          <div className="mt-8 flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-8">
+            {job.hiringOrganizationLogo && (
+              <img src={job.hiringOrganizationLogo} alt={`${job.hiringOrganizationName} logo`} className="h-20 w-20 object-contain rounded-full bg-white p-2 shadow-lg" />
             )}
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-1">{job.title}</h1>
+              <p className="text-indigo-200 text-xl font-medium">{job.hiringOrganizationName}</p>
+              <p className="text-indigo-300 mt-1">{formatLocation()}</p>
+            </div>
           </div>
-        )}
+        </div>
 
-        {/* Job Description */}
-        <div className="mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-            <svg className="w-6 h-6 mr-2 text-[#4f3ff0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Job Description
-          </h2>
-          <div className="prose max-w-none">
+        {/* Main Content */}
+        <div className="p-8 lg:p-12">
+          {/* Job Overview */}
+          <div className="border-b pb-8 mb-8 border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Job Overview</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="flex items-center space-x-3 text-gray-600">
+                <svg className="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-1.272-8.455-3.355L1 9.499V4.5M4.5 9.499l7.5 7.5 7.5-7.5M4.5 4.5l7.5 7.5 7.5-7.5" />
+                </svg>
+                <span><span className="font-semibold text-gray-800">Type:</span> {job.employmentType || 'N/A'}</span>
+              </div>
+              <div className="flex items-center space-x-3 text-gray-600">
+                <svg className="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span><span className="font-semibold text-gray-800">Posted:</span> {formatDate(job.publishedAt)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Job Description */}
+          <div className="prose max-w-none text-gray-700">
             {parseDescription(job.description)}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center gap-4 py-8">
+        <div className="p-8 lg:p-12 bg-gray-50 flex flex-col sm:flex-row justify-center gap-4">
           <a
             href={job.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-[#4f3ff0] hover:bg-[#3f2fd0] text-white font-medium px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-xl flex items-center group text-lg"
+            className="w-full sm:w-auto text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-10 rounded-full transition-colors duration-300 shadow-lg transform hover:scale-105"
           >
             Apply Now
-            <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
           </a>
-          <Link to="/jobs" className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-xl flex items-center text-lg">
-            Cancel
+          <Link
+            to="/jobs"
+            className="w-full sm:w-auto text-center bg-transparent border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-bold py-4 px-10 rounded-full transition-colors duration-300 transform hover:scale-105"
+          >
+            Back to Jobs
           </Link>
         </div>
       </div>
     </div>
   );
-} 
+}
