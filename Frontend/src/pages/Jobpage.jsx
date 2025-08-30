@@ -1,20 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../service/api.js';
 import { useSearchParams } from 'react-router-dom';
 import JobCard from '../components/JobCard';
-
-// Custom debounce function
-const debounce = (func, wait) => {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-};
 
 export default function Jobpage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,9 +12,6 @@ export default function Jobpage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
-  const [skills, setSkills] = useState('');
-  const [country, setCountry] = useState('');
-  const [jobRole, setJobRole] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Fetch Jobs
@@ -41,9 +25,6 @@ export default function Jobpage() {
           limit: 10,
           q: searchQuery || undefined,
           city: location || undefined,
-          country: country || undefined,
-          skills: skills || undefined,
-          role: jobRole || undefined,
         },
       });
 
@@ -92,7 +73,7 @@ export default function Jobpage() {
     fetchJobs();
   }, [currentPage]);
 
-  // Handle filters
+  // Handle input changes for search and location
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     switch (name) {
@@ -102,22 +83,6 @@ export default function Jobpage() {
       case 'location':
         setLocation(value);
         break;
-      case 'country':
-        setCountry(value);
-        break;
-      case 'skills':
-        setSkills(value);
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleFilterChange = (filterType, value) => {
-    switch (filterType) {
-      case 'role':
-        setJobRole(value);
-        break;
       default:
         break;
     }
@@ -125,7 +90,7 @@ export default function Jobpage() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page on new search
     fetchJobs();
   };
 
@@ -168,11 +133,10 @@ export default function Jobpage() {
           </p>
         </div>
 
-        {/* Search + Filter Bar */}
+        {/* Search Bar */}
         <div className="flex flex-col gap-6 mb-8">
-          {/* Search Row */}
           <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-center gap-4 bg-white shadow-lg rounded-2xl p-6 border border-gray-200 animate-fade-in-up">
-            {/* Search Query */}
+            {/* Search Query Input */}
             <div className="relative flex-1 group w-full">
               <svg
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-[#4f3ff0] transition-colors"
@@ -198,7 +162,7 @@ export default function Jobpage() {
               />
             </div>
 
-            {/* Location */}
+            {/* Location Input */}
             <div className="relative flex-1 group w-full">
               <svg
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-[#4f3ff0] transition-colors"
@@ -233,7 +197,7 @@ export default function Jobpage() {
             {/* Search Button */}
             <button
               type="submit"
-              className="bg-[#4f3ff0] hover:bg-[#3f2fd0] text-white font-semibold px-8 py-3 rounded-lg transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-md hover:shadow-xl"
+              className="bg-[#4f3ff0] hover:bg-[#3f2fd0] text-white font-semibold px-8 py-3 rounded-lg transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-md hover:shadow-xl w-full md:w-auto"
             >
               <svg
                 className="h-5 w-5 mr-2"
@@ -247,68 +211,6 @@ export default function Jobpage() {
               Search Jobs
             </button>
           </form>
-
-          {/* Horizontal Filters Row */}
-          <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-200 animate-fade-in-up animation-delay-200">
-            <div className="flex flex-wrap items-center gap-4">
-              {/* Job Role Filter */}
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">Job Role:</span>
-                <select
-                  value={jobRole || ''}
-                  onChange={(e) =>
-                    handleFilterChange('role', e.target.value === '' ? '' : e.target.value)
-                  }
-                  className="border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#4f3ff0] text-gray-700 bg-gray-50 hover:border-[#4f3ff0] transition-colors"
-                  disabled={loading}
-                >
-                  <option value="">All Roles</option>
-                  {[
-                    'Software Development',
-                    'Design',
-                    'Marketing',
-                    'Sales',
-                    'Data Science',
-                    'Product Management',
-                    'Customer Support',
-                    'Operations',
-                  ].map((role) => (
-                    <option key={role} value={role}>
-                      {role}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Country Filter */}
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">Country:</span>
-                <input
-                  type="text"
-                  name="country"
-                  placeholder="Enter country"
-                  value={country}
-                  onChange={handleInputChange}
-                  className="border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#4f3ff0] text-gray-700 bg-gray-50 hover:border-[#4f3ff0] transition-colors"
-                  disabled={loading}
-                />
-              </div>
-
-              {/* Skills Filter */}
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">Skills:</span>
-                <input
-                  type="text"
-                  name="skills"
-                  placeholder="e.g., React, Node.js"
-                  value={skills}
-                  onChange={handleInputChange}
-                  className="border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#4f3ff0] text-gray-700 bg-gray-50 hover:border-[#4f3ff0] transition-colors"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Advertise Resume Analyzer */}
@@ -344,11 +246,11 @@ export default function Jobpage() {
 
           {!loading && jobs.length === 0 && !error && (
             <div className="lg:col-span-2 text-center py-16">
-              <svg className="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="00 24 24">
+              <svg className="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-gray-600 text-lg">No jobs found matching your criteria.</p>
-              <p className="text-gray-500 mt-2">Try adjusting your filters or search terms.</p>
+              <p className="text-gray-500 mt-2">Try adjusting your search terms.</p>
             </div>
           )}
 
@@ -541,6 +443,9 @@ export default function Jobpage() {
           }
           50% {
             transform: translateY(-10px);
+          }
+          100% {
+            transform: translateY(0);
           }
         }
 
